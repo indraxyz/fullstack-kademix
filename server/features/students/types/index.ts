@@ -30,6 +30,8 @@ export interface SearchStudentInput {
   sortOrder?: string | null;
   limit?: number | null;
   offset?: number | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
 }
 
 export interface QueryArgs {

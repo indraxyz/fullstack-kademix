@@ -95,11 +95,17 @@ server/
 
 - Apollo Server with Next.js integration (`@as-integrations/next`)
 - GraphQL API endpoint: `/api/graphql` (handles both GET and POST)
+- Schema and context composed from a feature registry (`shared/graphql/schema.ts`, `context.ts`); add features without editing the route
 - Type-safe resolvers with TypeScript
 - Custom error formatting
-- DataSources for database operations
-- Schema-first approach with typeDefs
-- Lazy database connection on first request
+- DataSources use the model injected via context (`this.model`)
+- Introspection disabled in production
+
+### Logging and Config
+
+- `server/shared/logger.ts`: level-based logger (env `LOG_LEVEL`: debug, info, warn, error)
+- `server/shared/config/upload.ts`: upload limits and allowed types (env `MAX_UPLOAD_SIZE_KB` optional)
+- Feature-specific services (e.g. `features/students/services/photo.ts`) for reusable logic
 
 ## Adding a New Feature
 
@@ -111,21 +117,23 @@ server/
 
 2. Add feature-specific code:
 
-   - `models/` - Mongoose models
-   - `datasources/` - Apollo DataSources
+   - `models/` - Mongoose/Typegoose models
+   - `datasources/` - Apollo DataSources (use `this.model` from the injected model)
    - `resolvers/` - GraphQL resolvers
    - `schemas/` - GraphQL typeDefs and Zod validation schemas
    - `types/` - TypeScript types
 
-3. Update `app/api/graphql/route.ts`:
+3. Add a feature barrel `server/features/your-feature/index.ts` that exports:
+   - `yourFeatureTypeDefsExport` (typeDefs string)
+   - `yourFeatureResolversExport` (resolvers object)
+   - `createYourFeatureDataSources()` (returns `{ yourResource: new YourDataSource({ modelOrCollection: YourModel }) }`)
 
-   - Import new typeDefs and add to `typeDefs` array
-   - Import new resolvers and merge with existing resolvers
-   - Add new dataSource to context
+4. Register the feature:
+   - In `server/shared/graphql/schema.ts`: add typeDefs and resolvers to `allTypeDefs` / `allResolvers`
+   - In `server/shared/graphql/context.ts`: spread `...createYourFeatureDataSources()` into `dataSources`
+   - In `server/shared/graphql/types.ts`: add the new dataSource to `ApolloContext["dataSources"]`
 
-4. Update `server/shared/graphql/types.ts`:
-
-   - Add new dataSource to `ApolloContext` interface
+   The GraphQL route (`app/api/graphql/route.ts`) does not need to be edited.
 
 ## Import Patterns
 
@@ -210,14 +218,21 @@ export type StudentInput = z.infer<typeof studentInputSchema>;
 
 ### DataSource (`features/students/datasources/Students.ts`)
 
+DataSources receive the model via the context constructor. Do not define a `model` getter (it would block the base class from setting `this.model`). Use a private `getModel()` method to read the injected model:
+
 ```typescript
 import { MongoDataSource } from "apollo-datasource-mongodb";
-import { StudentModel } from "../models/Student";
+import { Model } from "mongoose";
 import { StudentDocument } from "../types";
 
 export default class Students extends MongoDataSource<StudentDocument> {
+  private getModel(): Model<StudentDocument> {
+    const m = (this as unknown as { model: Model<StudentDocument> }).model;
+    if (!m) throw new DatabaseError("Students datasource model not initialized");
+    return m;
+  }
   async getAllStudents(input: SearchStudentInput): Promise<StudentDocument[]> {
-    // Implementation using StudentModel
+    return this.getModel().find(query).sort(sortObj).limit(limit).skip(offset);
   }
 }
 ```

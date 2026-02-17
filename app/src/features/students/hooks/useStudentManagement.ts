@@ -65,14 +65,14 @@ export function useStudentManagement() {
         return false;
       }
     },
-    [crud]
+    [crud],
   );
 
   const handleEdit = useCallback(
     (student: Student) => {
       ui.handleEdit(student);
     },
-    [ui]
+    [ui],
   );
 
   const handleCreate = useCallback(() => {
@@ -81,7 +81,7 @@ export function useStudentManagement() {
 
   const handleFormClose = useCallback(() => {
     ui.hideForm();
-    form.resetForm();
+    form.form.reset();
   }, [ui, form]);
 
   return {
@@ -113,7 +113,7 @@ export function useStudentManagement() {
     refetch: crud.refetch,
     reset: () => {
       ui.reset();
-      form.resetForm();
+      form.form.reset();
       search.setSearchTerm("");
     },
   };

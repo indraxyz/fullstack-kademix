@@ -4,33 +4,72 @@ A modern full-stack application built with Next.js 16, MongoDB, and GraphQL usin
 
 ## Tech Stack
 
-- **Next.js 16.0.4** (App Router with Turbopack)
+- **Next.js 16.0.10** (App Router with Turbopack)
 - **React 19.2.0**
 - **TypeScript 5** (Strict mode)
 - **Apollo Server & Client** (GraphQL)
-- **MongoDB** (with Typegoose)
-- **Zod** (Runtime validation)
+- **MongoDB** (Mongoose with Typegoose)
+- **Zod** (Runtime validation, v4)
 - **Tailwind CSS 4**
+- **React Hook Form** + **@hookform/resolvers** (forms with Zod)
+- **TanStack Table** (data tables, sortable columns)
+- **Zustand** (state management)
+- **next-themes** (theme toggle)
+- **Radix UI** / **shadcn** (UI primitives)
 - **date-fns** (Date utilities)
 - **Jest** (Testing)
+- **@graphql-tools/schema** (GraphQL schema types)
 
 ## Features
 
-- ✅ Type-safe GraphQL API with proper TypeScript types
-- ✅ Typegoose for enhanced TypeScript type inference with MongoDB
-- ✅ Runtime validation with Zod schemas
-- ✅ Environment variable validation
-- ✅ Custom error handling with proper error codes
-- ✅ Optimized database connection pooling
-- ✅ Lazy database connection initialization
-- ✅ Comprehensive error messages
-- ✅ Student CRUD operations
-- ✅ Search and filtering capabilities
-- ✅ Sorting and pagination
-- ✅ Feature-based architecture (frontend & backend)
-- ✅ Modular component structure
-- ✅ Custom hooks for separation of concerns
-- ✅ Enhanced UI/UX with toasts and modals
+### Backend
+
+- Type-safe GraphQL API with proper TypeScript types
+- Typegoose for enhanced TypeScript type inference with MongoDB
+- Zod validation for all inputs (student, search, IDs) with `.strict()` and clear messages
+- Environment variable validation at startup
+- Custom error classes (`ValidationError`, `NotFoundError`, `DatabaseError`)
+- Optimized database connection pooling and lazy connection initialization
+- Student CRUD with photo upload (optional Vercel Blob)
+- Search by name, email, address only (no search by age)
+- Age range filter (`ageMin` / `ageMax`) in query
+- ID validation (`studentIdSchema`, `deleteStudentsIdsSchema`) for single and bulk delete
+- Feature-based architecture; schema and resolvers merged from feature registry
+- Logging and upload config in shared config
+
+### Frontend
+
+- Student CRUD with modal form (React Hook Form + Zod)
+- **Cards and Table view** with switcher; table has sortable column headers (chevrons) synced with filter dialog
+- **Filter dialog**: sort by field, sort order, age range slider; filters applied only on **Apply**
+- **Search** by name, email, address; active age range shown in toolbar when not default
+- **Bulk delete** in both cards and table view (select all in cards only)
+- **Student details modal** (read-only) with link to edit
+- Table actions column uses dropdown (View details, Edit, Delete)
+- Student cards: checkbox and actions menu always visible on mobile, hover on desktop
+- Custom hooks (CRUD, form, search, UI), toasts, confirmation dialogs, empty and error states
+- Theme toggle (next-themes) aligned with back button on students page
+
+## Roadmap
+
+### Planned features & tech stack
+
+| Feature                | Planned tech                                |
+| ---------------------- | ------------------------------------------- |
+| User authentication    | Better Auth, Neon (PostgreSQL)              |
+| ORM                    | Prisma (MongoDB), Drizzle (Neon PostgreSQL) |
+| Data fetching          | SWR                                         |
+| List virtualization    | TanStack Virtual                            |
+| Utility functions      | Lodash                                      |
+| Data visualization     | ECharts                                     |
+| Rich text editor       | Tiptap                                      |
+| Carousel / slider      | Swiper                                      |
+| Automation workflow    | n8n                                         |
+| MCP development server | TypeScript                                  |
+
+- Student registration Form (next priority)
+
+_Already in use: React Hook Form + Zod (forms), TanStack Table (data table), Zustand (state)._
 
 ## Getting Started
 
@@ -56,6 +95,12 @@ MONGODB_URI=mongodb://localhost:27017/students-db
 NODE_ENV=development
 ```
 
+Optional (photo upload):
+
+```env
+BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
+```
+
 4. Start the development server:
 
 ```bash
@@ -63,124 +108,126 @@ pnpm dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
    - **Homepage** (`/`): Landing page with statistics and feature overview
-   - **Student Management** (`/src`): Full CRUD interface for managing students
+   - **Student Management** (`/src`): Full CRUD, cards/table view, filter dialog, bulk delete
 
 ## Project Structure
 
 ```
 ├── app/                           # Next.js App Router
 │   ├── api/
-│   │   └── graphql/              # GraphQL API route
-│   ├── src/                      # Student management feature
-│   │   ├── features/             # Feature-based modules
-│   │   │   └── students/         # Student feature
-│   │   │       ├── components/   # Feature components
-│   │   │       ├── hooks/        # Feature hooks
-│   │   │       ├── graphql/      # GraphQL operations
-│   │   │       └── types/        # Feature types
-│   │   ├── shared/               # Shared utilities
-│   │   │   ├── hooks/            # Reusable hooks
-│   │   │   ├── lib/              # Shared libraries
-│   │   │   └── utils/            # Shared utilities
-│   │   └── page.tsx              # Student management page (/src)
-│   ├── page.tsx                  # Homepage (/) with stats
-│   └── layout.tsx                # Root layout
+│   │   └── graphql/               # GraphQL API route
+│   ├── src/                       # Student management feature
+│   │   ├── features/
+│   │   │   └── students/
+│   │   │       ├── components/
+│   │   │       │   ├── StudentManagement.tsx
+│   │   │       │   └── student-management/
+│   │   │       │       ├── PageHeader.tsx
+│   │   │       │       ├── SearchToolbar.tsx
+│   │   │       │       ├── FilterDialog.tsx
+│   │   │       │       ├── StudentsTable.tsx
+│   │   │       │       ├── StudentCard.tsx
+│   │   │       │       ├── StudentFormModal.tsx
+│   │   │       │       ├── StudentDetailsModal.tsx
+│   │   │       │       ├── EmptyState.tsx
+│   │   │       │       ├── ConfirmDialog.tsx
+│   │   │       │       ├── StateOverlay.tsx
+│   │   │       │       ├── types.ts
+│   │   │       │       └── index.ts
+│   │   │       ├── hooks/
+│   │   │       ├── graphql/
+│   │   │       └── types/
+│   │   ├── shared/
+│   │   │   ├── hooks/
+│   │   │   ├── lib/
+│   │   │   ├── utils/
+│   │   │   └── validation/
+│   │   └── page.tsx
+│   ├── page.tsx
+│   └── layout.tsx
 │
-├── server/                        # Server-side code
-│   ├── features/                 # Feature-based modules
-│   │   └── students/             # Student feature
-│   │       ├── datasources/      # Apollo DataSources
-│   │       ├── models/           # Mongoose models
-│   │       ├── resolvers/        # GraphQL resolvers
-│   │       ├── schemas/          # GraphQL & validation schemas
-│   │       └── types/            # Feature types
-│   └── shared/                   # Shared utilities
-│       ├── config/               # Environment configuration
-│       ├── database/             # Database connection
-│       ├── errors/               # Custom error classes
-│       └── graphql/              # GraphQL utilities
+├── server/
+│   ├── features/
+│   │   └── students/
+│   │       ├── datasources/
+│   │       ├── models/
+│   │       ├── resolvers/
+│   │       ├── schemas/
+│   │       ├── services/
+│   │       ├── types/
+│   │       └── index.ts
+│   └── shared/
+│       ├── config/
+│       ├── database/
+│       ├── errors/
+│       ├── graphql/               # schema, context, mergeResolvers, formatError, types
+│       └── logger.ts
 │
-└── public/                       # Static assets
+└── public/
 ```
 
 ## Architecture
 
 ### Feature-Based Organization
 
-Both frontend and backend follow a feature-based architecture:
+- **Features**: Self-contained modules (components, hooks, models, resolvers, schemas, types, services)
+- **Shared**: Reusable utilities, config, errors, GraphQL wiring
+- **Backend**: typeDefs and resolvers merged in `shared/graphql/schema.ts`; context builds dataSources from features
 
-- **Features**: Self-contained modules with all related code (components, hooks, models, resolvers, etc.)
-- **Shared**: Reusable utilities, configurations, and libraries
-- **Benefits**: Better maintainability, scalability, and team collaboration
+See:
 
-See detailed documentation:
-
-- Frontend: [`app/src/README.md`](app/src/README.md) - Includes architecture details
-- Backend: [`server/README.md`](server/README.md) - Includes architecture details
+- [Frontend README](app/src/README.md)
+- [Backend README](server/README.md)
 
 ## Key Improvements
 
 ### Type Safety
 
-- All `any` types replaced with proper TypeScript interfaces
-- GraphQL resolvers fully typed
-- Zod schemas with type inference
-- Strict TypeScript configuration
-
-### Error Handling
-
-- Custom error classes (`ValidationError`, `NotFoundError`, `DatabaseError`)
-- Proper error codes and status codes
-- GraphQL error formatting
-- User-friendly error messages
+- Strict TypeScript; GraphQL resolvers and inputs fully typed
+- Zod schemas with inferred types; no `any`
 
 ### Validation
 
-- Zod schemas for all inputs
-- Runtime validation at API boundaries
-- Environment variable validation at startup
-- Form validation with real-time feedback
+- Zod at API boundaries (student input, search input, IDs)
+- Form validation via React Hook Form + Zod resolver
+- Filter dialog applies age range only on Apply
+
+### Error Handling
+
+- Custom errors with codes; GraphQL error formatting; user-facing messages
 
 ### Database
 
-- Lazy connection initialization
-- Connection pooling optimized
-- Proper connection state management
-- Event handlers registered only once
+- Lazy connection, pooling, single event registration
 
-### Frontend Architecture
+### Frontend
 
-- Feature-based component organization
-- Custom hooks for separation of concerns
-- Modular, reusable components
-- Enhanced UI/UX with toasts and modals
-- Accessibility improvements
+- Cards + table view; sortable table headers synced with filter dialog
+- Filter dialog (sort + age range); bulk delete; details modal
+- React Hook Form + Zod for create/edit; mobile-friendly card actions and checkbox
 
 ## Development
 
 ### Scripts
 
-- `pnpm dev` - Start development server with Turbopack
-- `pnpm build` - Build for production
-- `pnpm start` - Start production server
+- `pnpm dev` – Start development server (Turbopack)
+- `pnpm build` – Build for production
+- `pnpm start` – Start production server
 
 ## Best Practices
 
-1. **Type Safety**: All code is strictly typed - avoid `any` types
-2. **Validation**: Use Zod schemas for all inputs
-3. **Error Handling**: Use custom error classes for better error messages
-4. **Database**: Connection is lazy-loaded, don't call at module level
-5. **Code Organization**: Follow the feature-based folder structure
-6. **Components**: Keep components small and focused
-7. **Hooks**: Extract reusable logic into custom hooks
-8. **Testing**: Write tests for critical paths
+1. **Type safety**: Strict TypeScript; avoid `any`
+2. **Validation**: Zod at boundaries; RHF + Zod for forms
+3. **Errors**: Use custom error classes
+4. **Database**: Lazy connection; do not connect at module level
+5. **Structure**: Feature-based; keep components and hooks focused
+6. **Testing**: Cover critical paths
 
 ## Documentation
 
-- [Frontend README](app/src/README.md) - Frontend feature documentation and architecture
-- [Backend README](server/README.md) - Backend architecture documentation
+- [Frontend README](app/src/README.md) – Student management UI and architecture
+- [Backend README](server/README.md) – GraphQL API and architecture
 
 ## License
 

@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Plus, GraduationCap } from "lucide-react";
 
 export interface PageHeaderProps {
@@ -18,13 +17,10 @@ export function PageHeader({ onCreate, disabled }: PageHeaderProps) {
           Student Management
         </h1>
       </div>
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-        <Button onClick={onCreate} disabled={disabled}>
-          <Plus className="h-4 w-4" />
-          Add Student
-        </Button>
-      </div>
+      <Button onClick={onCreate} disabled={disabled}>
+        <Plus className="h-4 w-4" />
+        Add Student
+      </Button>
     </div>
   );
 }

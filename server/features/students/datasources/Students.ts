@@ -1,31 +1,50 @@
 import { MongoDataSource } from "apollo-datasource-mongodb";
-import { StudentModel as Student } from "../models/Student";
+import { Model } from "mongoose";
 import { StudentDocument } from "../types";
 import { StudentInput, SearchStudentInput } from "../schemas/validation";
 import { DatabaseError, NotFoundError } from "@/server/shared/errors";
 
 export default class Students extends MongoDataSource<StudentDocument> {
+  private getModel(): Model<StudentDocument> {
+    const m = (this as unknown as { model: Model<StudentDocument> }).model;
+    if (!m) throw new DatabaseError("Students datasource model not initialized");
+    return m;
+  }
+
   async getAllStudents(input: SearchStudentInput): Promise<StudentDocument[]> {
     try {
-      const { searchTerm, sortBy, sortOrder, limit, offset } = input;
-      let query: Record<string, unknown> = {};
+      const { searchTerm, sortBy, sortOrder, limit, offset, ageMin, ageMax } =
+        input;
+
+      const query: Record<string, unknown> = {};
 
       if (searchTerm && searchTerm.trim() !== "") {
         const searchRegex = new RegExp(searchTerm, "i");
-        query = {
+        Object.assign(query, {
           $or: [
             { name: searchRegex },
             { email: searchRegex },
             { address: searchRegex },
-            ...(isNaN(Number(searchTerm)) ? [] : [{ age: Number(searchTerm) }]),
           ],
-        };
+        });
+      }
+
+      const ageCondition: Record<string, number> = {};
+      if (ageMin != null && !Number.isNaN(ageMin)) {
+        ageCondition.$gte = ageMin;
+      }
+      if (ageMax != null && !Number.isNaN(ageMax)) {
+        ageCondition.$lte = ageMax;
+      }
+      if (Object.keys(ageCondition).length > 0) {
+        query.age = ageCondition;
       }
 
       const sortObj: Record<string, 1 | -1> = {};
       sortObj[sortBy] = sortOrder === "desc" ? -1 : 1;
 
-      const students = await Student.find(query)
+      const students = await this.getModel()
+        .find(query)
         .sort(sortObj)
         .limit(limit)
         .skip(offset);
@@ -41,7 +60,7 @@ export default class Students extends MongoDataSource<StudentDocument> {
       if (!id) {
         throw new Error("Student ID is required");
       }
-      return await Student.findById(id);
+      return await this.getModel().findById(id);
     } catch (error) {
       if (
         error instanceof Error &&
@@ -59,7 +78,7 @@ export default class Students extends MongoDataSource<StudentDocument> {
     input: StudentInput;
   }): Promise<StudentDocument> {
     try {
-      const newStudent = await Student.create(input);
+      const newStudent = await this.getModel().create(input);
       return newStudent;
     } catch (error) {
       if (error instanceof Error && error.name === "ValidationError") {
@@ -81,7 +100,7 @@ export default class Students extends MongoDataSource<StudentDocument> {
         throw new Error("Student ID is required");
       }
 
-      const updatedStudent = await Student.findByIdAndUpdate(id, updateData, {
+      const updatedStudent = await this.getModel().findByIdAndUpdate(id, updateData, {
         new: true,
         runValidators: true,
       });
@@ -108,7 +127,7 @@ export default class Students extends MongoDataSource<StudentDocument> {
         throw new Error("Student ID is required");
       }
 
-      const deletedStudent = await Student.findByIdAndDelete(id);
+      const deletedStudent = await this.getModel().findByIdAndDelete(id);
 
       if (!deletedStudent) {
         throw new NotFoundError("Student", id);
@@ -129,7 +148,7 @@ export default class Students extends MongoDataSource<StudentDocument> {
         throw new Error("Student IDs are required");
       }
 
-      const result = await Student.deleteMany({
+      const result = await this.getModel().deleteMany({
         _id: { $in: ids },
       });
 

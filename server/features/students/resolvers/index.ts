@@ -1,8 +1,4 @@
 import { formatISO } from "date-fns";
-import { unlink, writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
-import { put, del } from "@vercel/blob";
 import {
   StudentParent,
   QueryArgs,
@@ -15,6 +11,8 @@ import {
 import {
   studentInputSchema,
   searchStudentInputSchema,
+  studentIdSchema,
+  deleteStudentsIdsSchema,
 } from "../schemas/validation";
 import {
   ValidationError,
@@ -23,143 +21,8 @@ import {
 } from "@/server/shared/errors";
 import type { ApolloContext } from "@/server/shared/graphql/types";
 import { ZodError } from "zod";
-import { env } from "@/server/shared/config/env";
-
-const MAX_FILE_SIZE = 1024 * 1024; // 1MB
-const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "students");
-
-// Ensure upload directory exists
-async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-  }
-}
-
-// Helper function to delete photo (handles both local files and Vercel Blob URLs)
-async function deletePhoto(
-  photoPath: string | null | undefined
-): Promise<void> {
-  if (!photoPath) return;
-
-  try {
-    // Check if it's a Vercel Blob URL
-    if (
-      photoPath.startsWith("https://") &&
-      photoPath.includes("blob.vercel-storage.com")
-    ) {
-      // Delete from Vercel Blob
-      if (env.BLOB_READ_WRITE_TOKEN) {
-        await del(photoPath, { token: env.BLOB_READ_WRITE_TOKEN });
-        console.log("Photo deleted from Vercel Blob:", photoPath);
-      }
-    } else if (photoPath.startsWith("/uploads/students/")) {
-      // Delete local file
-      const oldPhotoFullPath = join(process.cwd(), "public", photoPath);
-      if (existsSync(oldPhotoFullPath)) {
-        await unlink(oldPhotoFullPath);
-        console.log("Photo deleted from local storage:", photoPath);
-      }
-    }
-  } catch (error) {
-    console.error("Error deleting photo:", error);
-    // Continue even if deletion fails
-  }
-}
-
-// Helper function to save base64 photo to disk or Vercel Blob
-async function saveBase64Photo(
-  base64Data: string,
-  studentId: string,
-  studentName: string,
-  oldPhotoPath?: string | null
-): Promise<string> {
-  try {
-    // Validate base64 format
-    if (!base64Data.startsWith("data:image/")) {
-      throw new ValidationError(
-        "Invalid photo format. Expected base64 image data."
-      );
-    }
-
-    // Extract mime type and base64 content
-    const matches = base64Data.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!matches) {
-      throw new ValidationError("Invalid base64 photo format.");
-    }
-
-    const mimeType = matches[1].toLowerCase();
-    const base64Content = matches[2];
-
-    // Validate file type
-    const allowedMimeTypes = ["jpeg", "jpg", "png"];
-    if (!allowedMimeTypes.includes(mimeType)) {
-      throw new ValidationError(
-        "Invalid file type. Only JPG, JPEG, and PNG are allowed."
-      );
-    }
-
-    // Convert base64 to buffer
-    const buffer = Buffer.from(base64Content, "base64");
-
-    // Validate file size
-    if (buffer.length > MAX_FILE_SIZE) {
-      throw new ValidationError("File size exceeds 1MB limit.");
-    }
-
-    // Generate filename: id_time_studentName.extension
-    const timestamp = Date.now();
-    const sanitizedName = studentName
-      .replace(/[^a-zA-Z0-9]/g, "_")
-      .toLowerCase()
-      .substring(0, 50);
-    const extension = mimeType === "jpeg" ? "jpg" : mimeType;
-    const filename = `students/${studentId}_${timestamp}_${sanitizedName}.${extension}`;
-
-    // Check if running on Vercel or if BLOB_READ_WRITE_TOKEN is available
-    const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
-    const useBlobStorage = isVercel || env.BLOB_READ_WRITE_TOKEN;
-
-    // Delete old photo if provided
-    if (oldPhotoPath) {
-      await deletePhoto(oldPhotoPath);
-    }
-
-    if (useBlobStorage && env.BLOB_READ_WRITE_TOKEN) {
-      // Use Vercel Blob Storage
-      try {
-        const blob = await put(filename, buffer, {
-          access: "public",
-          contentType: `image/${mimeType}`,
-          token: env.BLOB_READ_WRITE_TOKEN,
-        });
-
-        console.log("Photo saved to Vercel Blob:", blob.url);
-        return blob.url;
-      } catch (blobError) {
-        console.error(
-          "Error uploading to Vercel Blob, falling back to local:",
-          blobError
-        );
-        // Fall through to local storage if blob upload fails
-      }
-    }
-
-    // Use local file system (development or fallback)
-    await ensureUploadDir();
-    const filepath = join(UPLOAD_DIR, filename.replace("students/", ""));
-    await writeFile(filepath, buffer);
-
-    console.log("Photo saved to local storage:", filename);
-    return `/uploads/students/${filename.replace("students/", "")}`;
-  } catch (error) {
-    console.error("Error saving photo:", error);
-    if (error instanceof ValidationError) {
-      throw error;
-    }
-    throw new DatabaseError("Failed to save photo", error);
-  }
-}
+import { logger } from "@/server/shared/logger";
+import { deleteStudentPhoto, saveStudentPhoto } from "../services/photo";
 
 const formatDate = (date: Date | string | undefined): string => {
   if (!date) {
@@ -169,12 +32,12 @@ const formatDate = (date: Date | string | undefined): string => {
   try {
     const dateObj = date instanceof Date ? date : new Date(date);
     if (isNaN(dateObj.getTime())) {
-      console.warn("Invalid date:", date);
+      logger.warn("Invalid date:", date);
       return formatISO(new Date());
     }
     return formatISO(dateObj);
   } catch (error) {
-    console.error("Error parsing date:", error);
+    logger.error("Error parsing date:", error);
     return formatISO(new Date());
   }
 };
@@ -206,12 +69,12 @@ export const studentResolvers = {
         const result = await context.dataSources.students.getAllStudents(
           validatedInput
         );
-        console.log(
+        logger.info(
           `✅ Query: students - Success: Found ${result.length} student(s)`
         );
         return result;
       } catch (error) {
-        console.error("❌ Query: students - Error:", error);
+        logger.error("❌ Query: students - Error:", error);
         if (error instanceof Error && error.name === "ZodError") {
           throw new ValidationError("Invalid search parameters", {
             search: error.message,
@@ -226,24 +89,27 @@ export const studentResolvers = {
       context: ApolloContext
     ) => {
       try {
-        if (!args.id) {
-          throw new ValidationError("Student ID is required");
-        }
+        const id = studentIdSchema.parse(args.id);
         const student = await context.dataSources.students.getStudent({
-          id: args.id,
+          id,
         });
         if (!student) {
-          console.log(`❌ Query: student - Not found: ${args.id}`);
-          throw new NotFoundError("Student", args.id);
+          logger.info(`❌ Query: student - Not found: ${id}`);
+          throw new NotFoundError("Student", id);
         }
-        console.log(
+        logger.info(
           `✅ Query: student - Success: Found student "${
             student.name || "Unknown"
-          }" (${args.id})`
+          }" (${id})`
         );
         return student;
       } catch (error) {
-        console.error("❌ Query: student - Error:", error);
+        logger.error("❌ Query: student - Error:", error);
+        if (error instanceof ZodError) {
+          throw new ValidationError("Invalid student ID", {
+            id: error.issues.map((i) => i.message).join(" "),
+          });
+        }
         if (
           error instanceof NotFoundError ||
           error instanceof ValidationError
@@ -261,7 +127,7 @@ export const studentResolvers = {
       context: ApolloContext
     ) => {
       try {
-        console.log("🆕 Mutation: createStudent - Input:", {
+        logger.info("🆕 Mutation: createStudent - Input:", {
           ...args.input,
           photo: args.input.photo
             ? args.input.photo.startsWith("data:image/")
@@ -284,7 +150,7 @@ export const studentResolvers = {
 
         // Validate input (without photo for now)
         const validatedInput = studentInputSchema.parse(cleanInput);
-        console.log("✅ Mutation: createStudent - Validation passed");
+        logger.info("✅ Mutation: createStudent - Validation passed");
 
         // Create student first to get the ID
         const newStudent = await context.dataSources.students.createStudent({
@@ -296,7 +162,7 @@ export const studentResolvers = {
         }
 
         const studentId = newStudent._id?.toString() || newStudent.id || "";
-        console.log(
+        logger.info(
           `✅ Mutation: createStudent - Student created: ${studentId} (${
             validatedInput.name || "Unknown"
           })`
@@ -309,8 +175,8 @@ export const studentResolvers = {
           photoBase64.startsWith("data:image/")
         ) {
           try {
-            console.log("📸 Mutation: createStudent - Uploading photo...");
-            const photoPath = await saveBase64Photo(
+            logger.info("📸 Mutation: createStudent - Uploading photo...");
+            const photoPath = await saveStudentPhoto(
               photoBase64,
               studentId,
               validatedInput.name || "student",
@@ -323,12 +189,12 @@ export const studentResolvers = {
                 input: { id: studentId, ...validatedInput, photo: photoPath },
               });
 
-            console.log(
+            logger.info(
               `✅ Mutation: createStudent - Photo uploaded: ${photoPath}`
             );
             return updatedStudent || newStudent;
           } catch (photoError) {
-            console.error(
+            logger.error(
               "⚠️ Mutation: createStudent - Error saving photo, but student was created:",
               photoError
             );
@@ -339,7 +205,7 @@ export const studentResolvers = {
 
         return newStudent;
       } catch (error) {
-        console.error("❌ Mutation: createStudent - Error:", error);
+        logger.error("❌ Mutation: createStudent - Error:", error);
 
         // Handle Zod validation errors with detailed field messages
         if (error instanceof ZodError) {
@@ -358,7 +224,7 @@ export const studentResolvers = {
             ? `${String(firstError.path[0])}: ${firstError.message}`
             : "Invalid student data";
 
-          console.error("Validation errors:", fieldErrors);
+          logger.error("Validation errors:", fieldErrors);
           throw new ValidationError(errorMessage, fieldErrors);
         }
 
@@ -377,7 +243,7 @@ export const studentResolvers = {
       context: ApolloContext
     ) => {
       try {
-        console.log("✏️ Mutation: updateStudent - ID:", args.id, "Input:", {
+        logger.info("✏️ Mutation: updateStudent - ID:", args.id, "Input:", {
           ...args.input,
           photo: args.input.photo
             ? args.input.photo.startsWith("data:image/")
@@ -388,23 +254,18 @@ export const studentResolvers = {
             : undefined,
         });
 
-        if (!args.id) {
-          throw new ValidationError("Student ID is required");
-        }
+        const id = studentIdSchema.parse(args.id);
 
-        // Get existing student to check for old photo
         const existingStudent = await context.dataSources.students.getStudent({
-          id: args.id,
+          id,
         });
 
         if (!existingStudent) {
-          console.log(
-            `❌ Mutation: updateStudent - Student not found: ${args.id}`
-          );
-          throw new NotFoundError("Student", args.id);
+          logger.info(`❌ Mutation: updateStudent - Student not found: ${id}`);
+          throw new NotFoundError("Student", id);
         }
 
-        console.log(
+        logger.info(
           `📋 Mutation: updateStudent - Existing student: "${
             existingStudent.name || "Unknown"
           }"`
@@ -422,7 +283,7 @@ export const studentResolvers = {
 
         // Validate input (without photo for now)
         const validatedInput = studentInputSchema.parse(cleanInput);
-        console.log("✅ Mutation: updateStudent - Validation passed");
+        logger.info("✅ Mutation: updateStudent - Validation passed");
 
         // Handle photo upload if base64 data is provided
         let photoPath: string | undefined = undefined;
@@ -432,18 +293,18 @@ export const studentResolvers = {
           photoBase64.startsWith("data:image/")
         ) {
           try {
-            console.log("📸 Mutation: updateStudent - Uploading new photo...");
-            photoPath = await saveBase64Photo(
+            logger.info("📸 Mutation: updateStudent - Uploading new photo...");
+            photoPath = await saveStudentPhoto(
               photoBase64,
-              args.id,
+              id,
               validatedInput.name || existingStudent.name || "student",
               existingStudent.photo || null
             );
-            console.log(
+            logger.info(
               `✅ Mutation: updateStudent - Photo uploaded: ${photoPath}`
             );
           } catch (photoError) {
-            console.error(
+            logger.error(
               "⚠️ Mutation: updateStudent - Error saving photo:",
               photoError
             );
@@ -462,22 +323,22 @@ export const studentResolvers = {
 
         const updatedStudent = await context.dataSources.students.updateStudent(
           {
-            input: { id: args.id, ...updateData },
+            input: { id, ...updateData },
           }
         );
 
         if (!updatedStudent) {
-          throw new NotFoundError("Student", args.id);
+          throw new NotFoundError("Student", id);
         }
 
-        console.log(
+        logger.info(
           `✅ Mutation: updateStudent - Success: Student "${
             updatedStudent.name || "Unknown"
           }" updated`
         );
         return updatedStudent;
       } catch (error) {
-        console.error("❌ Mutation: updateStudent - Error:", error);
+        logger.error("❌ Mutation: updateStudent - Error:", error);
 
         // Handle Zod validation errors with detailed field messages
         if (error instanceof ZodError) {
@@ -496,7 +357,7 @@ export const studentResolvers = {
             ? `${String(firstError.path[0])}: ${firstError.message}`
             : "Invalid student data";
 
-          console.error("Validation errors:", fieldErrors);
+          logger.error("Validation errors:", fieldErrors);
           throw new ValidationError(errorMessage, fieldErrors);
         }
 
@@ -516,22 +377,18 @@ export const studentResolvers = {
       context: ApolloContext
     ) => {
       try {
-        console.log("🗑️ Mutation: deleteStudent - ID:", args.id);
+        const id = studentIdSchema.parse(args.id);
+        logger.info("🗑️ Mutation: deleteStudent - ID:", id);
 
-        if (!args.id) {
-          throw new ValidationError("Student ID is required");
-        }
         const student = await context.dataSources.students.getStudent({
-          id: args.id,
+          id,
         });
         if (!student) {
-          console.log(
-            `❌ Mutation: deleteStudent - Student not found: ${args.id}`
-          );
-          throw new NotFoundError("Student", args.id);
+          logger.info(`❌ Mutation: deleteStudent - Student not found: ${id}`);
+          throw new NotFoundError("Student", id);
         }
 
-        console.log(
+        logger.info(
           `📋 Mutation: deleteStudent - Student found: "${
             student.name || "Unknown"
           }"`
@@ -540,15 +397,15 @@ export const studentResolvers = {
         // Delete photo file if exists (handles both local and Vercel Blob)
         if (student.photo) {
           try {
-            console.log(
+            logger.info(
               `📸 Mutation: deleteStudent - Deleting photo: ${student.photo}`
             );
-            await deletePhoto(student.photo);
-            console.log(
+            await deleteStudentPhoto(student.photo);
+            logger.info(
               `✅ Mutation: deleteStudent - Photo deleted: ${student.photo}`
             );
           } catch (error) {
-            console.warn(
+            logger.warn(
               "⚠️ Mutation: deleteStudent - Error deleting photo file:",
               error
             );
@@ -557,17 +414,17 @@ export const studentResolvers = {
         }
 
         const result = await context.dataSources.students.deleteStudent({
-          id: args.id,
+          id,
         });
 
-        console.log(
+        logger.info(
           `✅ Mutation: deleteStudent - Success: Student "${
             student.name || "Unknown"
           }" deleted`
         );
         return result;
       } catch (error) {
-        console.error("❌ Mutation: deleteStudent - Error:", error);
+        logger.error("❌ Mutation: deleteStudent - Error:", error);
         if (
           error instanceof NotFoundError ||
           error instanceof ValidationError
@@ -583,22 +440,18 @@ export const studentResolvers = {
       context: ApolloContext
     ) => {
       try {
-        console.log("🗑️ Mutation: deleteStudents - IDs:", args.ids);
+        const ids = deleteStudentsIdsSchema.parse(args.ids);
+        logger.info("🗑️ Mutation: deleteStudents - IDs:", ids);
 
-        if (!args.ids || args.ids.length === 0) {
-          throw new ValidationError("At least one student ID is required");
-        }
-
-        // Get all students to delete their photos
         const studentsToDelete = await Promise.all(
-          args.ids.map((id) => context.dataSources.students.getStudent({ id }))
+          ids.map((id) => context.dataSources.students.getStudent({ id }))
         );
 
         const validStudents = studentsToDelete.filter(
           (student): student is NonNullable<typeof student> => student !== null
         ) as StudentParent[];
 
-        console.log(
+        logger.info(
           `📋 Mutation: deleteStudents - Found ${validStudents.length} student(s) to delete`
         );
 
@@ -608,14 +461,14 @@ export const studentResolvers = {
             try {
               const studentId =
                 student._id?.toString() || student.id || "unknown";
-              console.log(
+              logger.info(
                 `📸 Mutation: deleteStudents - Deleting photo: ${student.photo}`
               );
-              await deletePhoto(student.photo);
+              await deleteStudentPhoto(student.photo);
             } catch (error) {
               const studentId =
                 student._id?.toString() || student.id || "unknown";
-              console.warn(
+              logger.warn(
                 `⚠️ Mutation: deleteStudents - Error deleting photo for student ${studentId}:`,
                 error
               );
@@ -624,18 +477,24 @@ export const studentResolvers = {
           }
         }
 
-        // Delete students from database
         const deletedCount = await context.dataSources.students.deleteStudents({
-          ids: args.ids,
+          ids,
         });
 
-        console.log(
+        logger.info(
           `✅ Mutation: deleteStudents - Success: Deleted ${deletedCount} student(s)`
         );
 
         return deletedCount;
       } catch (error) {
-        console.error("❌ Mutation: deleteStudents - Error:", error);
+        logger.error("❌ Mutation: deleteStudents - Error:", error);
+        if (error instanceof ZodError) {
+          const first = error.issues[0];
+          throw new ValidationError(
+            first?.message ?? "Invalid student IDs",
+            { ids: error.message }
+          );
+        }
         if (
           error instanceof NotFoundError ||
           error instanceof ValidationError

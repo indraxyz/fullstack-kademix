@@ -10,6 +10,15 @@ export type { StudentFormModalProps } from "./StudentFormModal";
 export { StudentCard } from "./StudentCard";
 export type { StudentCardProps } from "./StudentCard";
 
+export { StudentsTable } from "./StudentsTable";
+export type { StudentsTableProps } from "./StudentsTable";
+
+export { StudentDetailsModal } from "./StudentDetailsModal";
+export type { StudentDetailsModalProps } from "./StudentDetailsModal";
+
+export { FilterDialog } from "./FilterDialog";
+export type { FilterDialogProps } from "./FilterDialog";
+
 export { EmptyState } from "./EmptyState";
 export type { EmptyStateProps } from "./EmptyState";
 

@@ -1,4 +1,11 @@
-import { prop, getModelForClass, modelOptions } from "@typegoose/typegoose";
+import mongoose from "mongoose";
+import type { Model } from "mongoose";
+import {
+  prop,
+  getModelForClass,
+  modelOptions,
+  type DocumentType,
+} from "@typegoose/typegoose";
 
 @modelOptions({
   schemaOptions: {
@@ -45,13 +52,13 @@ export class Student {
   })
   photo?: string;
 
-  // Timestamps are automatically added by schemaOptions
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-// Export the model
-export const StudentModel = getModelForClass(Student);
+type StudentModelType = Model<DocumentType<Student>>;
+const existingModel = mongoose.models.Student as StudentModelType | undefined;
+export const StudentModel = (existingModel ??
+  getModelForClass(Student)) as StudentModelType;
 
-// Default export for backward compatibility
 export default StudentModel;

@@ -13,8 +13,11 @@ import {
 import {
   PageHeader,
   SearchToolbar,
+  FilterDialog,
   StudentFormModal,
   StudentCard,
+  StudentsTable,
+  StudentDetailsModal,
   EmptyState,
   ConfirmDialog,
   StateOverlay,
@@ -44,6 +47,10 @@ export default function StudentManagementAdvanced() {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(
     new Set()
   );
+  type ViewMode = "cards" | "table";
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [detailsStudent, setDetailsStudent] = useState<Student | null>(null);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
 
   const filteredStudentIds = useMemo(
     () =>
@@ -225,10 +232,15 @@ export default function StudentManagementAdvanced() {
     (student: Student) => {
       setFormError(null);
       setSelectedStudents(new Set());
+      setDetailsStudent(null);
       ui.handleEdit(student);
     },
     [ui]
   );
+
+  const handleDetails = useCallback((student: Student) => {
+    setDetailsStudent(student);
+  }, []);
 
   const requestDelete = useCallback((id: string, name?: string | null) => {
     setConfirmDeleteState({
@@ -325,22 +337,36 @@ export default function StudentManagementAdvanced() {
     <div className="relative mx-auto max-w-6xl p-4 md:p-6">
       <PageHeader onCreate={handleCreate} disabled={isAnyLoading} />
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
         <SearchToolbar
           searchTerm={search.searchTerm}
-          sortBy={search.sortBy}
-          sortOrder={search.sortOrder}
-          sortOptions={search.sortOptions}
           stats={search.searchStats}
           isLoading={isAnyLoading}
           onSearchChange={search.handleSearchChange}
-          onSortChange={search.handleSortChange}
-          onToggleSortOrder={search.toggleSortOrder}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          showViewSwitcher={hasStudents}
+          onOpenFilter={() => setFilterDialogOpen(true)}
+          hasActiveFilters={search.hasActiveFilters}
+          ageRange={search.ageRange}
         />
       </div>
 
+      <FilterDialog
+        open={filterDialogOpen}
+        onOpenChange={setFilterDialogOpen}
+        sortBy={search.sortBy}
+        sortOrder={search.sortOrder}
+        sortOptions={search.sortOptions}
+        onSortChange={search.handleSortChange}
+        onToggleSortOrder={search.toggleSortOrder}
+        ageRange={search.ageRange}
+        onAgeRangeChange={search.setAgeRange}
+        onReset={() => search.setSortOrder("asc")}
+      />
+
       {/* Selection Controls & Bulk Actions */}
-      {hasStudents && (
+      {hasStudents && viewMode === "cards" && (
         <div
           className={cn(
             "mb-4 rounded-lg border transition-all duration-300",
@@ -350,7 +376,6 @@ export default function StudentManagementAdvanced() {
           )}
         >
           <div className="flex items-center justify-between p-2 sm:p-3">
-            {/* Left: Select All & Selection Count */}
             <div className="flex items-center gap-2">
               <div
                 onClick={handleSelectAll}
@@ -381,8 +406,6 @@ export default function StudentManagementAdvanced() {
                   {allSelected ? "All selected" : "Select all"}
                 </span>
               </div>
-
-              {/* Selection Count Badge with Clear */}
               {selectedStudents.size > 0 && (
                 <Badge
                   variant="secondary"
@@ -395,8 +418,6 @@ export default function StudentManagementAdvanced() {
                 </Badge>
               )}
             </div>
-
-            {/* Right: Delete Action */}
             {selectedStudents.size > 0 && (
               <Button
                 variant="destructive"
@@ -413,26 +434,81 @@ export default function StudentManagementAdvanced() {
         </div>
       )}
 
-      {hasStudents ? (
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {search.filteredStudents.map((student) => {
-              if (!student?.id) return null;
-              return (
-                <StudentCard
-                  key={student.id}
-                  student={student}
-                  disabled={isAnyLoading}
-                  onEdit={handleEdit}
-                  onDeleteRequest={requestDelete}
-                  isSelected={selectedStudents.has(student.id)}
-                  onSelect={handleSelectStudent}
-                  showCheckbox={true}
-                />
-              );
-            })}
-          </div>
+      {/* Table view: bulk delete bar when any row selected */}
+      {hasStudents && viewMode === "table" && selectedStudents.size > 0 && (
+        <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-2 sm:p-3 flex items-center justify-between">
+          <Badge
+            variant="secondary"
+            onClick={handleClearSelection}
+            className="gap-1.5 bg-primary/10 text-primary border-primary/20 pl-2.5 pr-1.5 py-1 cursor-pointer hover:bg-primary/20"
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            <span>{selectedStudents.size} selected</span>
+            <X className="h-3.5 w-3.5 ml-0.5 hover:text-destructive" />
+          </Badge>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={requestBulkDelete}
+            disabled={isAnyLoading}
+            className="h-8 gap-1.5"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Delete</span>
+          </Button>
         </div>
+      )}
+
+      {hasStudents ? (
+        viewMode === "cards" ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {search.filteredStudents.map((student) => {
+                if (!student?.id) return null;
+                return (
+                  <StudentCard
+                    key={student.id}
+                    student={student}
+                    disabled={isAnyLoading}
+                    onEdit={handleEdit}
+                    onDeleteRequest={requestDelete}
+                    isSelected={selectedStudents.has(student.id)}
+                    onSelect={handleSelectStudent}
+                    showCheckbox={true}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <StudentsTable
+            students={search.filteredStudents}
+            selectedIds={selectedStudents}
+            disabled={isAnyLoading}
+            onSelect={handleSelectStudent}
+            onSelectAll={handleSelectAll}
+            onDetails={handleDetails}
+            onEdit={handleEdit}
+            onDeleteRequest={requestDelete}
+            sortBy={
+              search.sortBy as
+                | "name"
+                | "email"
+                | "age"
+                | "address"
+                | "createdAt"
+                | "updatedAt"
+            }
+            sortOrder={search.sortOrder}
+            onColumnSort={(field) => {
+              if (field === search.sortBy) {
+                search.toggleSortOrder();
+              } else {
+                search.handleSortChange(field);
+              }
+            }}
+          />
+        )
       ) : (
         <EmptyState
           hasSearch={search.searchStats.hasSearch}
@@ -464,6 +540,17 @@ export default function StudentManagementAdvanced() {
           isProcessing={confirmDeleteState.isProcessing}
           onCancel={closeConfirmDialog}
           onConfirm={handleConfirmDelete}
+        />
+      )}
+
+      {detailsStudent && (
+        <StudentDetailsModal
+          student={detailsStudent}
+          onClose={() => setDetailsStudent(null)}
+          onEdit={(s) => {
+            setDetailsStudent(null);
+            handleEdit(s);
+          }}
         />
       )}
     </div>

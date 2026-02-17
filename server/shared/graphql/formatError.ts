@@ -1,30 +1,5 @@
 import { GraphQLError, GraphQLFormattedError } from "graphql";
-import { AppError, MongoDBConnectionError } from "../errors";
-
-// Check if error is a MongoDB connection error
-const isMongoConnectionError = (error: unknown): boolean => {
-  if (!error || typeof error !== "object") return false;
-
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorName = error instanceof Error ? error.name : "";
-
-  const connectionErrorPatterns = [
-    "ECONNREFUSED",
-    "ENOTFOUND",
-    "ETIMEDOUT",
-    "MongoServerSelectionError",
-    "MongoNetworkError",
-    "MongoTimeoutError",
-    "Server selection timed out",
-    "connection timed out",
-  ];
-
-  return (
-    connectionErrorPatterns.some(
-      (pattern) => errorMessage.includes(pattern) || errorName.includes(pattern)
-    ) || errorName === "MongoServerSelectionError"
-  );
-};
+import { AppError, MongoDBConnectionError, isMongoConnectionError } from "../errors";
 
 export function formatGraphQLError(
   formattedError: GraphQLFormattedError,

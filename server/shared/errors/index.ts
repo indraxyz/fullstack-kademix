@@ -33,6 +33,28 @@ export class DatabaseError extends AppError {
 
 export class MongoDBConnectionError extends AppError {
   constructor(message: string = "Cannot connect to MongoDB. If you're using MongoDB Atlas M0 (free tier), the cluster may be paused after 30 days of inactivity. Please wait 10-30 seconds for it to wake up, then try again.", public originalError?: unknown) {
-    super(message, "MONGODB_CONNECTION_ERROR", 503); // 503 Service Unavailable
+    super(message, "MONGODB_CONNECTION_ERROR", 503);
   }
+}
+
+const MONGO_CONNECTION_ERROR_PATTERNS = [
+  "ECONNREFUSED",
+  "ENOTFOUND",
+  "ETIMEDOUT",
+  "MongoServerSelectionError",
+  "MongoNetworkError",
+  "MongoTimeoutError",
+  "Server selection timed out",
+  "connection timed out",
+] as const;
+
+export function isMongoConnectionError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorName = error instanceof Error ? error.name : "";
+  return (
+    MONGO_CONNECTION_ERROR_PATTERNS.some(
+      (pattern) => errorMessage.includes(pattern) || errorName.includes(pattern)
+    ) || errorName === "MongoServerSelectionError"
+  );
 }

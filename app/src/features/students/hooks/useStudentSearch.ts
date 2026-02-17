@@ -10,6 +10,7 @@ export function useStudentSearch({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<keyof Student>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [ageRange, setAgeRange] = useState<[number, number]>([1, 120]);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -32,18 +33,24 @@ export function useStudentSearch({
     onSortChange?.(sortBy, newSortOrder);
   };
 
-  const filteredStudents = useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     if (!debouncedSearchTerm) return students;
-
     const searchLower = debouncedSearchTerm.toLowerCase();
     return students.filter(
       (student) =>
         student.name?.toLowerCase().includes(searchLower) ||
         student.email?.toLowerCase().includes(searchLower) ||
-        student.address?.toLowerCase().includes(searchLower) ||
-        student.age?.toString().includes(searchLower)
+        student.address?.toLowerCase().includes(searchLower)
     );
   }, [students, debouncedSearchTerm]);
+
+  const filteredStudents = useMemo(() => {
+    const [ageMin, ageMax] = ageRange;
+    return filteredBySearch.filter((student) => {
+      const age = student.age ?? 0;
+      return age >= ageMin && age <= ageMax;
+    });
+  }, [filteredBySearch, ageRange]);
 
   const sortedStudents = useMemo(() => {
     return [...filteredStudents].sort((a, b) => {
@@ -85,6 +92,9 @@ export function useStudentSearch({
     };
   }, [students.length, filteredStudents.length, debouncedSearchTerm]);
 
+  const hasActiveFilters =
+    ageRange[0] !== 1 || ageRange[1] !== 120 || !!debouncedSearchTerm;
+
   const sortOptions = [
     { value: "name", label: "Nama" },
     { value: "email", label: "Email" },
@@ -98,6 +108,9 @@ export function useStudentSearch({
     debouncedSearchTerm,
     sortBy,
     sortOrder,
+    ageRange,
+    setAgeRange,
+    hasActiveFilters,
     filteredStudents: sortedStudents,
     searchStats,
     sortOptions,

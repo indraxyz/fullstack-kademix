@@ -5,7 +5,6 @@ import { formatDateTime } from "@/app/src/shared/utils";
 import {
   Mail,
   MapPin,
-  Calendar,
   Edit,
   Trash2,
   User,
@@ -79,46 +78,36 @@ export function StudentCard({
         disabled && "opacity-60 pointer-events-none"
       )}
     >
-      {/* Selection Checkbox */}
+      {/* Selection Checkbox - always visible on mobile */}
       {showCheckbox && (
         <div
           className={cn(
             "absolute left-3 top-3 z-20 transition-all duration-300",
-            isSelected
-              ? "opacity-100 scale-100"
-              : "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100"
+            "opacity-100 scale-100 md:scale-100",
+            !isSelected && "md:opacity-0 md:scale-90 md:group-hover:opacity-100 md:group-hover:scale-100"
           )}
         >
-          <div
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => {
+              if (onSelect && !disabled) {
+                onSelect(student.id, checked as boolean);
+              }
+            }}
+            disabled={disabled}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={isSelected ? "Deselect student" : "Select student"}
             className={cn(
-              "rounded-lg p-1.5 shadow-lg transition-all duration-200",
+              "h-5 w-5 rounded-md border-2 transition-all duration-200",
               isSelected
-                ? "bg-primary text-primary-foreground shadow-primary/25"
-                : "bg-background/95 backdrop-blur-sm hover:bg-background"
+                ? "border-primary bg-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                : "border-muted-foreground/50 bg-background/80 hover:border-primary hover:bg-background"
             )}
-          >
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={(checked) => {
-                if (onSelect && !disabled) {
-                  onSelect(student.id, checked as boolean);
-                }
-              }}
-              disabled={disabled}
-              onClick={(e) => e.stopPropagation()}
-              aria-label={isSelected ? "Deselect student" : "Select student"}
-              className={cn(
-                "h-5 w-5 transition-all duration-200",
-                isSelected
-                  ? "border-primary-foreground data-[state=checked]:bg-transparent data-[state=checked]:text-primary-foreground"
-                  : "border-muted-foreground/50 hover:border-primary"
-              )}
-            />
-          </div>
+          />
         </div>
       )}
 
-      {/* Actions Dropdown */}
+      {/* Actions Dropdown - always visible on mobile */}
       {showActions && onEdit && onDeleteRequest && (
         <div className="absolute right-3 top-3 z-20">
           <DropdownMenu>
@@ -129,7 +118,7 @@ export function StudentCard({
                 className={cn(
                   "h-8 w-8 rounded-full shadow-md transition-all duration-200",
                   "bg-background/90 backdrop-blur-sm hover:bg-background",
-                  "opacity-0 group-hover:opacity-100"
+                  "opacity-100 md:opacity-0 md:group-hover:opacity-100"
                 )}
                 disabled={disabled}
               >
@@ -239,38 +228,6 @@ export function StudentCard({
             <span>Updated {formatDateTime(student.updatedAt)}</span>
           </div>
         </div>
-
-        {/* Action Buttons - Alternative Style */}
-        {showActions && onEdit && onDeleteRequest && (
-          <div className="flex gap-2 pt-1">
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(student);
-              }}
-              disabled={disabled}
-              variant="default"
-              className="flex-1 h-9"
-              size="sm"
-            >
-              <Edit className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteRequest(student.id, student.name);
-              }}
-              disabled={disabled}
-              variant="outline"
-              className="flex-1 h-9 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-              size="sm"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

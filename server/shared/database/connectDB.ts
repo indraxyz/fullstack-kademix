@@ -1,18 +1,19 @@
 import mongoose from "mongoose";
 import { env } from "../config/env";
+import { isMongoConnectionError } from "../errors";
 
 let isConnected = false;
 let connectionPromise: Promise<typeof mongoose> | null = null;
 
 const connectionOptions: mongoose.ConnectOptions = {
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 30000, // Increased to 30 seconds for Atlas wake-up
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   bufferCommands: false,
   maxIdleTimeMS: 10000,
   retryWrites: true,
   retryReads: true,
-  connectTimeoutMS: 30000, // 30 seconds connection timeout
+  connectTimeoutMS: 30000,
 };
 
 let connectionHandlersRegistered = false;
@@ -43,40 +44,8 @@ const registerConnectionHandlers = () => {
   });
 };
 
-/**
- * Check if error is a MongoDB connection error (likely Atlas cluster paused)
- */
-const isMongoConnectionError = (error: unknown): boolean => {
-  if (!error || typeof error !== "object") return false;
-
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorName = error instanceof Error ? error.name : "";
-
-  // Common MongoDB connection error patterns
-  const connectionErrorPatterns = [
-    "ECONNREFUSED",
-    "ENOTFOUND",
-    "ETIMEDOUT",
-    "MongoServerSelectionError",
-    "MongoNetworkError",
-    "MongoTimeoutError",
-    "Server selection timed out",
-    "connection timed out",
-  ];
-
-  return (
-    connectionErrorPatterns.some(
-      (pattern) => errorMessage.includes(pattern) || errorName.includes(pattern)
-    ) || errorName === "MongoServerSelectionError"
-  );
-};
-
-/**
- * Wait for a specified duration
- */
-const wait = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Connect to MongoDB database with retry logic for Atlas M0 clusters

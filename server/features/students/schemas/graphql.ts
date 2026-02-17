@@ -23,6 +23,8 @@ export const studentTypeDefs = `
     sortOrder: String
     limit: Int
     offset: Int
+    ageMin: Int
+    ageMax: Int
   }
 
   extend type Query {
