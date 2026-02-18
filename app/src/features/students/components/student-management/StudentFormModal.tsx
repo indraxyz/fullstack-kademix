@@ -11,77 +11,28 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import {
   AlertCircle,
-  Upload,
   X,
-  User,
-  Mail,
-  Calendar,
-  MapPin,
-  Camera,
-  ImagePlus,
   Loader2,
   UserPlus,
   UserPen,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { StudentFormFields } from "./StudentFormFields";
 
 export interface StudentFormModalProps {
   isEditing: boolean;
   formData: StudentFormData;
   errors: StudentFormErrors;
   isSubmitting: boolean;
-  onInputChange: (field: keyof StudentFormData, value: string | number) => void;
+  onInputChange: (field: keyof StudentFormData, value: string | number | undefined) => void;
   onPhotoChange?: (file: File | null) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
   formError: string | null;
   photoPreview?: string | null;
-}
-
-function FormField({
-  label,
-  required,
-  error,
-  children,
-  htmlFor,
-  icon: Icon,
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: React.ReactNode;
-  htmlFor: string;
-  icon?: React.ComponentType<{ className?: string }>;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className={cn(
-          "flex items-center gap-2 text-sm font-medium",
-          error && "text-destructive"
-        )}
-      >
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
-      {children}
-      {error && (
-        <p className="flex items-center gap-1.5 text-xs text-destructive animate-in slide-in-from-top-1 duration-200">
-          <AlertCircle className="h-3 w-3" />
-          {error}
-        </p>
-      )}
-    </div>
-  );
 }
 
 export function StudentFormModal({
@@ -159,164 +110,15 @@ export function StudentFormModal({
         )}
 
         <form onSubmit={onSubmit} className="px-6 py-4 space-y-5">
-          {/* Photo Upload Section */}
-          <div className="flex items-start gap-4">
-            <div className="relative group">
-              <Avatar className="h-20 w-20 border-4 border-background shadow-lg ring-2 ring-border">
-                <AvatarImage src={photoPreview || undefined} alt="Preview" />
-                <AvatarFallback className="bg-muted text-muted-foreground text-lg">
-                  {formData.name ? (
-                    getInitials(formData.name)
-                  ) : (
-                    <User className="h-8 w-8" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
-              {photoPreview && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -right-1 -top-1 h-6 w-6 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => onPhotoChange?.(null)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-            <div className="flex-1 space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Camera className="h-4 w-4 text-muted-foreground" />
-                Profile Photo
-              </Label>
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="photo"
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-lg",
-                    "border-2 border-dashed border-muted-foreground/25",
-                    "px-4 py-2.5 text-sm font-medium transition-all duration-200",
-                    "hover:border-primary/50 hover:bg-primary/5",
-                    "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
-                  )}
-                >
-                  <ImagePlus className="h-4 w-4 text-primary" />
-                  {photoPreview ? "Change Photo" : "Upload Photo"}
-                </Label>
-                <input
-                  id="photo"
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    onPhotoChange?.(file);
-                  }}
-                  className="hidden"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                JPG, JPEG, or PNG. Max 1MB.
-              </p>
-              {errors.photo && (
-                <p className="flex items-center gap-1.5 text-xs text-destructive">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.photo}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Form Fields */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              label="Full Name"
-              required
-              error={errors.name}
-              htmlFor="name"
-              icon={User}
-            >
-              <Input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => onInputChange("name", e.target.value)}
-                placeholder="John Doe"
-                aria-invalid={!!errors.name}
-                className={cn(
-                  "h-10 transition-all duration-200",
-                  errors.name && "border-destructive focus-visible:ring-destructive/30"
-                )}
-              />
-            </FormField>
-
-            <FormField
-              label="Age"
-              required
-              error={errors.age}
-              htmlFor="age"
-              icon={Calendar}
-            >
-              <Input
-                id="age"
-                type="number"
-                min={1}
-                max={120}
-                value={formData.age}
-                onChange={(e) => onInputChange("age", e.target.value)}
-                placeholder="18"
-                aria-invalid={!!errors.age}
-                className={cn(
-                  "h-10 transition-all duration-200",
-                  errors.age && "border-destructive focus-visible:ring-destructive/30"
-                )}
-              />
-            </FormField>
-          </div>
-
-          <FormField
-            label="Email Address"
-            required
-            error={errors.email}
-            htmlFor="email"
-            icon={Mail}
-          >
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => onInputChange("email", e.target.value)}
-              placeholder="john.doe@example.com"
-              aria-invalid={!!errors.email}
-              className={cn(
-                "h-10 transition-all duration-200",
-                errors.email && "border-destructive focus-visible:ring-destructive/30"
-              )}
-            />
-          </FormField>
-
-          <FormField
-            label="Address"
-            required
-            error={errors.address}
-            htmlFor="address"
-            icon={MapPin}
-          >
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => onInputChange("address", e.target.value)}
-              placeholder="123 Main Street, City, Country"
-              rows={3}
-              className={cn(
-                "resize-none transition-all duration-200",
-                errors.address && "border-destructive focus-visible:ring-destructive/30"
-              )}
-              aria-invalid={!!errors.address}
-            />
-          </FormField>
-
+          <StudentFormFields
+            formData={formData}
+            errors={errors}
+            onInputChange={onInputChange}
+            showPhotoSection={true}
+            photoPreview={photoPreview}
+            onPhotoChange={onPhotoChange}
+            getInitials={getInitials}
+          />
           <Separator />
 
           <DialogFooter className="gap-2 sm:gap-2">

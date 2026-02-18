@@ -5,6 +5,14 @@ export interface Student {
   age: number;
   address: string;
   photo?: string;
+  dateOfBirth?: string | null;
+  phoneNumber?: string | null;
+  latestEducation?: string | null;
+  gender?: string | null;
+  notes?: string | null;
+  classMode?: string | null;
+  studyProgram?: string | null;
+  codingTrack?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +23,14 @@ export interface StudentFormData {
   age: number;
   address: string;
   photo?: string;
+  dateOfBirth?: string;
+  phoneNumber?: string;
+  latestEducation?: string | null;
+  gender?: string | null;
+  notes?: string;
+  classMode?: string | null;
+  studyProgram?: string | null;
+  codingTrack?: string | null;
 }
 
 export interface StudentFormErrors {
@@ -23,6 +39,14 @@ export interface StudentFormErrors {
   age?: string;
   address?: string;
   photo?: string;
+  dateOfBirth?: string;
+  phoneNumber?: string;
+  latestEducation?: string;
+  gender?: string;
+  notes?: string;
+  classMode?: string;
+  studyProgram?: string;
+  codingTrack?: string;
 }
 
 export interface UseStudentFormProps {

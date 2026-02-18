@@ -1,53 +1,56 @@
-import { MongoDataSource } from "apollo-datasource-mongodb";
-import { Model } from "mongoose";
-import { StudentDocument } from "../types";
+import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { StudentInput, SearchStudentInput } from "../schemas/validation";
 import { DatabaseError, NotFoundError } from "@/server/shared/errors";
+import type { StudentDocument } from "../types";
 
-export default class Students extends MongoDataSource<StudentDocument> {
-  private getModel(): Model<StudentDocument> {
-    const m = (this as unknown as { model: Model<StudentDocument> }).model;
-    if (!m) throw new DatabaseError("Students datasource model not initialized");
-    return m;
-  }
+function toPrismaCreateInput(input: StudentInput): Prisma.StudentCreateInput {
+  return {
+    name: input.name,
+    email: input.email,
+    age: input.age,
+    address: input.address,
+    photo: input.photo ?? undefined,
+    dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
+    phoneNumber: input.phoneNumber?.trim() || undefined,
+    latestEducation: input.latestEducation ?? undefined,
+    gender: input.gender ?? undefined,
+    notes: input.notes?.trim() || undefined,
+    classMode: input.classMode ?? undefined,
+    studyProgram: input.studyProgram ?? undefined,
+    codingTrack: input.codingTrack ?? undefined,
+  };
+}
+
+export default class Students {
+  constructor(private readonly prisma: PrismaClient) {}
 
   async getAllStudents(input: SearchStudentInput): Promise<StudentDocument[]> {
     try {
-      const { searchTerm, sortBy, sortOrder, limit, offset, ageMin, ageMax } =
-        input;
+      const { searchTerm, sortBy, sortOrder, limit, offset, ageMin, ageMax } = input;
 
-      const query: Record<string, unknown> = {};
+      const where: Prisma.StudentWhereInput = {};
 
-      if (searchTerm && searchTerm.trim() !== "") {
-        const searchRegex = new RegExp(searchTerm, "i");
-        Object.assign(query, {
-          $or: [
-            { name: searchRegex },
-            { email: searchRegex },
-            { address: searchRegex },
-          ],
-        });
+      if (searchTerm?.trim()) {
+        const term = searchTerm.trim();
+        where.OR = [
+          { name: { contains: term, mode: "insensitive" } },
+          { email: { contains: term, mode: "insensitive" } },
+          { address: { contains: term, mode: "insensitive" } },
+        ];
       }
 
-      const ageCondition: Record<string, number> = {};
-      if (ageMin != null && !Number.isNaN(ageMin)) {
-        ageCondition.$gte = ageMin;
-      }
-      if (ageMax != null && !Number.isNaN(ageMax)) {
-        ageCondition.$lte = ageMax;
-      }
-      if (Object.keys(ageCondition).length > 0) {
-        query.age = ageCondition;
-      }
+      const ageCond: { gte?: number; lte?: number } = {};
+      if (ageMin != null && !Number.isNaN(ageMin)) ageCond.gte = ageMin;
+      if (ageMax != null && !Number.isNaN(ageMax)) ageCond.lte = ageMax;
+      if (Object.keys(ageCond).length > 0) where.age = ageCond;
 
-      const sortObj: Record<string, 1 | -1> = {};
-      sortObj[sortBy] = sortOrder === "desc" ? -1 : 1;
-
-      const students = await this.getModel()
-        .find(query)
-        .sort(sortObj)
-        .limit(limit)
-        .skip(offset);
+      const students = await this.prisma.student.findMany({
+        where,
+        orderBy: { [sortBy]: sortOrder },
+        take: limit,
+        skip: offset,
+      });
 
       return students;
     } catch (error) {
@@ -57,29 +60,23 @@ export default class Students extends MongoDataSource<StudentDocument> {
 
   async getStudent({ id }: { id: string }): Promise<StudentDocument | null> {
     try {
-      if (!id) {
-        throw new Error("Student ID is required");
-      }
-      return await this.getModel().findById(id);
+      if (!id) throw new Error("Student ID is required");
+      return await this.prisma.student.findUnique({
+        where: { id },
+      });
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Student ID is required"
-      ) {
+      if (error instanceof Error && error.message === "Student ID is required") {
         throw error;
       }
       throw new DatabaseError("Failed to fetch student", error);
     }
   }
 
-  async createStudent({
-    input,
-  }: {
-    input: StudentInput;
-  }): Promise<StudentDocument> {
+  async createStudent({ input }: { input: StudentInput }): Promise<StudentDocument> {
     try {
-      const newStudent = await this.getModel().create(input);
-      return newStudent;
+      return await this.prisma.student.create({
+        data: toPrismaCreateInput(input),
+      });
     } catch (error) {
       if (error instanceof Error && error.name === "ValidationError") {
         throw new DatabaseError(`Validation failed: ${error.message}`, error);
@@ -94,26 +91,19 @@ export default class Students extends MongoDataSource<StudentDocument> {
     input: StudentInput & { id: string };
   }): Promise<StudentDocument> {
     try {
-      const { id, ...updateData } = input;
+      const { id, ...rest } = input;
+      if (!id) throw new Error("Student ID is required");
 
-      if (!id) {
-        throw new Error("Student ID is required");
-      }
+      const existing = await this.prisma.student.findUnique({ where: { id } });
+      if (!existing) throw new NotFoundError("Student", id);
 
-      const updatedStudent = await this.getModel().findByIdAndUpdate(id, updateData, {
-        new: true,
-        runValidators: true,
+      const data = toPrismaCreateInput(rest as StudentInput);
+      return await this.prisma.student.update({
+        where: { id },
+        data,
       });
-
-      if (!updatedStudent) {
-        throw new NotFoundError("Student", id);
-      }
-
-      return updatedStudent;
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
+      if (error instanceof NotFoundError) throw error;
       if (error instanceof Error && error.name === "ValidationError") {
         throw new DatabaseError(`Validation failed: ${error.message}`, error);
       }
@@ -123,36 +113,25 @@ export default class Students extends MongoDataSource<StudentDocument> {
 
   async deleteStudent({ id }: { id: string }): Promise<string> {
     try {
-      if (!id) {
-        throw new Error("Student ID is required");
-      }
-
-      const deletedStudent = await this.getModel().findByIdAndDelete(id);
-
-      if (!deletedStudent) {
-        throw new NotFoundError("Student", id);
-      }
-
+      if (!id) throw new Error("Student ID is required");
+      await this.prisma.student.delete({ where: { id } });
       return "Student deleted successfully";
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
+    } catch (error: unknown) {
+      if (error instanceof NotFoundError) throw error;
+      const prismaNotFound =
+        error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2025";
+      if (prismaNotFound) throw new NotFoundError("Student", id);
       throw new DatabaseError("Failed to delete student", error);
     }
   }
 
   async deleteStudents({ ids }: { ids: string[] }): Promise<number> {
     try {
-      if (!ids || ids.length === 0) {
-        throw new Error("Student IDs are required");
-      }
-
-      const result = await this.getModel().deleteMany({
-        _id: { $in: ids },
+      if (!ids?.length) throw new Error("Student IDs are required");
+      const result = await this.prisma.student.deleteMany({
+        where: { id: { in: ids } },
       });
-
-      return result.deletedCount || 0;
+      return result.count;
     } catch (error) {
       throw new DatabaseError("Failed to delete students", error);
     }

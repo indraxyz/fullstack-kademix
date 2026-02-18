@@ -7,13 +7,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function StudyGraphQLPage() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <Button variant="ghost" asChild className="-ml-4">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-        </Button>
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" asChild className="-ml-4">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Link>
+          </Button>
+          {/* <Button variant="outline" size="sm" asChild>
+            <Link href="/src/register">Register Student</Link>
+          </Button> */}
+        </div>
         <ThemeToggle />
       </div>
       <div className="mb-6">

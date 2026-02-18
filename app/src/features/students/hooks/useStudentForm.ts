@@ -14,6 +14,14 @@ const defaultValues: StudentFormValues = {
   age: 0,
   address: "",
   photo: undefined,
+  dateOfBirth: "",
+  phoneNumber: "",
+  latestEducation: undefined,
+  gender: undefined,
+  notes: "",
+  classMode: undefined,
+  studyProgram: undefined,
+  codingTrack: undefined,
 };
 
 function fileToBase64(file: File): Promise<string> {
@@ -47,6 +55,14 @@ export function useStudentForm({
         age: editingStudent.age ?? 0,
         address: editingStudent.address ?? "",
         photo: editingStudent.photo ?? undefined,
+        dateOfBirth: editingStudent.dateOfBirth ?? "",
+        phoneNumber: editingStudent.phoneNumber ?? "",
+        latestEducation: (editingStudent.latestEducation ?? undefined) as StudentFormValues["latestEducation"],
+        gender: (editingStudent.gender ?? undefined) as StudentFormValues["gender"],
+        notes: editingStudent.notes ?? "",
+        classMode: (editingStudent.classMode ?? undefined) as StudentFormValues["classMode"],
+        studyProgram: (editingStudent.studyProgram ?? undefined) as StudentFormValues["studyProgram"],
+        codingTrack: (editingStudent.codingTrack ?? undefined) as StudentFormValues["codingTrack"],
       });
       setPhotoPreview(editingStudent.photo ?? null);
       setPhotoFile(null);
@@ -109,6 +125,20 @@ export function useStudentForm({
             : values.photo
               ? { photo: values.photo }
               : {}),
+          ...(values.dateOfBirth?.trim()
+            ? { dateOfBirth: values.dateOfBirth.trim() }
+            : {}),
+          ...(values.phoneNumber?.trim()
+            ? { phoneNumber: values.phoneNumber.trim() }
+            : {}),
+          ...(values.latestEducation
+            ? { latestEducation: values.latestEducation }
+            : {}),
+          ...(values.gender ? { gender: values.gender } : {}),
+          ...(values.notes?.trim() ? { notes: values.notes.trim() } : {}),
+          ...(values.classMode ? { classMode: values.classMode } : {}),
+          ...(values.studyProgram ? { studyProgram: values.studyProgram } : {}),
+          ...(values.codingTrack ? { codingTrack: values.codingTrack } : {}),
         };
         if (!input.photo) delete input.photo;
         await onSubmit(input);
@@ -138,6 +168,14 @@ export function useStudentForm({
     age: form.watch("age"),
     address: form.watch("address"),
     photo: form.watch("photo") ?? (undefined as string | undefined),
+    dateOfBirth: form.watch("dateOfBirth") ?? "",
+    phoneNumber: form.watch("phoneNumber") ?? "",
+    latestEducation: form.watch("latestEducation") ?? undefined,
+    gender: form.watch("gender") ?? undefined,
+    notes: form.watch("notes") ?? "",
+    classMode: form.watch("classMode") ?? undefined,
+    studyProgram: form.watch("studyProgram") ?? undefined,
+    codingTrack: form.watch("codingTrack") ?? undefined,
   };
 
   const errors: StudentFormErrors = {
@@ -146,16 +184,26 @@ export function useStudentForm({
     age: form.formState.errors.age?.message,
     address: form.formState.errors.address?.message,
     photo: form.formState.errors.photo?.message,
+    dateOfBirth: form.formState.errors.dateOfBirth?.message,
+    phoneNumber: form.formState.errors.phoneNumber?.message,
+    latestEducation: form.formState.errors.latestEducation?.message,
+    gender: form.formState.errors.gender?.message,
+    notes: form.formState.errors.notes?.message,
+    classMode: form.formState.errors.classMode?.message,
+    studyProgram: form.formState.errors.studyProgram?.message,
+    codingTrack: form.formState.errors.codingTrack?.message,
   };
 
   const handleInputChange = useCallback(
-    (field: keyof StudentFormData, value: string | number) => {
-      form.setValue(
-        field,
-        (field === "age"
-          ? (typeof value === "string" ? parseInt(value, 10) : value) || 0
-          : value) as never,
-      );
+    (field: keyof StudentFormData, value: string | number | undefined) => {
+      if (field === "age") {
+        form.setValue(
+          "age",
+          value === undefined ? 0 : (typeof value === "string" ? parseInt(value, 10) : value) || 0
+        );
+        return;
+      }
+      form.setValue(field, value as never);
     },
     [form],
   );

@@ -1,6 +1,4 @@
-import { Model } from "mongoose";
-import { StudentDocument } from "./types";
-import { StudentModel } from "./models/Student";
+import { prisma } from "@/server/shared/database/prisma";
 import Students from "./datasources/Students";
 import { studentTypeDefs } from "./schemas/graphql";
 import { studentResolvers } from "./resolvers";
@@ -12,8 +10,6 @@ export function createStudentDataSources(): {
   students: Students;
 } {
   return {
-    students: new Students({
-      modelOrCollection: StudentModel as unknown as Model<StudentDocument>,
-    }),
+    students: new Students(prisma),
   };
 }

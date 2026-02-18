@@ -8,10 +8,8 @@ This directory contains the server-side code for the GraphQL API and database op
 server/
 ├── features/                    # Feature-based modules
 │   └── students/               # Student management feature
-│       ├── datasources/       # Apollo DataSources
+│       ├── datasources/       # Prisma-backed data access
 │       │   └── Students.ts
-│       ├── models/            # Typegoose models
-│       │   └── Student.ts
 │       ├── resolvers/         # GraphQL resolvers
 │       │   └── index.ts
 │       ├── schemas/           # GraphQL & validation schemas
@@ -23,8 +21,8 @@ server/
 ├── shared/                     # Shared utilities and configurations
 │   ├── config/                # Environment configuration
 │   │   └── env.ts
-│   ├── database/              # Database connection
-│   │   └── connectDB.ts
+│   ├── database/              # Prisma client & connection
+│   │   └── prisma.ts
 │   ├── errors/                # Custom error classes
 │   │   └── index.ts
 │   └── graphql/               # GraphQL utilities
@@ -112,13 +110,12 @@ server/
 1. Create a new directory under `features/`:
 
    ```bash
-   mkdir -p server/features/your-feature/{datasources,models,resolvers,schemas,types}
+   mkdir -p server/features/your-feature/{datasources,resolvers,schemas,types}
    ```
 
 2. Add feature-specific code:
 
-   - `models/` - Mongoose/Typegoose models
-   - `datasources/` - Apollo DataSources (use `this.model` from the injected model)
+   - `datasources/` - Prisma-backed data access (injected `PrismaClient`)
    - `resolvers/` - GraphQL resolvers
    - `schemas/` - GraphQL typeDefs and Zod validation schemas
    - `types/` - TypeScript types
@@ -126,7 +123,7 @@ server/
 3. Add a feature barrel `server/features/your-feature/index.ts` that exports:
    - `yourFeatureTypeDefsExport` (typeDefs string)
    - `yourFeatureResolversExport` (resolvers object)
-   - `createYourFeatureDataSources()` (returns `{ yourResource: new YourDataSource({ modelOrCollection: YourModel }) }`)
+   - `createYourFeatureDataSources()` (returns `{ yourResource: new YourDataSource(prisma) }`)
 
 4. Register the feature:
    - In `server/shared/graphql/schema.ts`: add typeDefs and resolvers to `allTypeDefs` / `allResolvers`
@@ -143,7 +140,6 @@ server/
 // From within a feature
 import { StudentDocument } from "../types";
 import { studentInputSchema } from "../schemas/validation";
-import Student from "../models/Student";
 
 // From outside a feature
 import { StudentDocument } from "@/server/features/students/types";
@@ -154,7 +150,7 @@ import { studentInputSchema } from "@/server/features/students/schemas/validatio
 
 ```typescript
 // Shared utilities
-import { connectDB } from "@/server/shared/database/connectDB";
+import { connectPrisma } from "@/server/shared/database/prisma";
 import {
   ValidationError,
   NotFoundError,
@@ -179,28 +175,9 @@ import { ApolloContext } from "@/server/shared/graphql/types";
 
 ## Example: Student Feature
 
-### Model (`features/students/models/Student.ts`)
+### Prisma schema (`prisma/schema.prisma`)
 
-```typescript
-import { prop, getModelForClass, modelOptions } from "@typegoose/typegoose";
-
-@modelOptions({
-  schemaOptions: {
-    timestamps: true,
-    versionKey: false,
-  },
-})
-export class Student {
-  @prop({ required: true, minlength: 2, maxlength: 100 })
-  name!: string;
-
-  @prop({ required: true, unique: true })
-  email!: string;
-  // ...
-}
-
-export const StudentModel = getModelForClass(Student);
-```
+The Student model is defined in the root `prisma/schema.prisma` and generated with `pnpm prisma generate`. See the file for the full schema.
 
 ### Validation Schema (`features/students/schemas/validation.ts`)
 
@@ -218,21 +195,17 @@ export type StudentInput = z.infer<typeof studentInputSchema>;
 
 ### DataSource (`features/students/datasources/Students.ts`)
 
-DataSources receive the model via the context constructor. Do not define a `model` getter (it would block the base class from setting `this.model`). Use a private `getModel()` method to read the injected model:
+DataSources receive the Prisma client via the constructor and use it for all database operations:
 
 ```typescript
-import { MongoDataSource } from "apollo-datasource-mongodb";
-import { Model } from "mongoose";
-import { StudentDocument } from "../types";
+import type { PrismaClient } from "@prisma/client";
+import { StudentInput, SearchStudentInput } from "../schemas/validation";
+import type { StudentDocument } from "../types";
 
-export default class Students extends MongoDataSource<StudentDocument> {
-  private getModel(): Model<StudentDocument> {
-    const m = (this as unknown as { model: Model<StudentDocument> }).model;
-    if (!m) throw new DatabaseError("Students datasource model not initialized");
-    return m;
-  }
+export default class Students {
+  constructor(private readonly prisma: PrismaClient) {}
   async getAllStudents(input: SearchStudentInput): Promise<StudentDocument[]> {
-    return this.getModel().find(query).sort(sortObj).limit(limit).skip(offset);
+    return this.prisma.student.findMany({ where, orderBy, take: limit, skip: offset });
   }
 }
 ```

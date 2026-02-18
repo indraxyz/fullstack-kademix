@@ -56,14 +56,14 @@ function HomePageContent() {
     students.length > 0
       ? Math.round(
           students.reduce((sum, student) => sum + student.age, 0) /
-            students.length
+            students.length,
         )
       : 0;
 
   const recentStudents = [...students]
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
     .slice(0, 3);
 
@@ -84,12 +84,19 @@ function HomePageContent() {
               Manage Students data with Next.js, GraphQL and MongoDB with ease
               and efficiency using the latest technology.
             </p>
-            <Button size="lg" asChild>
-              <Link href="/src" className="gap-2">
-                Start Managing Students
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button size="lg" asChild>
+                <Link href="/src" className="gap-2">
+                  Manage Students
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/src/register" className="gap-2">
+                  Register as Student
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -407,7 +414,7 @@ function HomePageContent() {
             className="shadow-lg hover:shadow-xl"
           >
             <Link href="/src" className="gap-2">
-              Start Now
+              Manage Students
               <ArrowRight className="w-5 h-5" />
             </Link>
           </Button>

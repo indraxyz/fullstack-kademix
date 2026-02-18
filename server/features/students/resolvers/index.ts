@@ -1,4 +1,5 @@
 import { formatISO } from "date-fns";
+import type { StudentDocument } from "../types";
 import {
   StudentParent,
   QueryArgs,
@@ -61,16 +62,21 @@ export const studentResolvers = {
     updatedAt: (parent: StudentParent): string => {
       return formatDate(parent.updatedAt);
     },
+
+    dateOfBirth: (parent: StudentParent): string | null => {
+      const d = parent.dateOfBirth;
+      if (!d) return null;
+      return formatDate(d);
+    },
   },
   Query: {
     students: async (_: unknown, args: QueryArgs, context: ApolloContext) => {
       try {
         const validatedInput = searchStudentInputSchema.parse(args.input || {});
-        const result = await context.dataSources.students.getAllStudents(
-          validatedInput
-        );
+        const result =
+          await context.dataSources.students.getAllStudents(validatedInput);
         logger.info(
-          `✅ Query: students - Success: Found ${result.length} student(s)`
+          `✅ Query: students - Success: Found ${result.length} student(s)`,
         );
         return result;
       } catch (error) {
@@ -86,7 +92,7 @@ export const studentResolvers = {
     student: async (
       _: unknown,
       args: StudentQueryArgs,
-      context: ApolloContext
+      context: ApolloContext,
     ) => {
       try {
         const id = studentIdSchema.parse(args.id);
@@ -100,7 +106,7 @@ export const studentResolvers = {
         logger.info(
           `✅ Query: student - Success: Found student "${
             student.name || "Unknown"
-          }" (${id})`
+          }" (${id})`,
         );
         return student;
       } catch (error) {
@@ -124,7 +130,7 @@ export const studentResolvers = {
     createStudent: async (
       _: unknown,
       args: CreateStudentArgs,
-      context: ApolloContext
+      context: ApolloContext,
     ) => {
       try {
         logger.info("🆕 Mutation: createStudent - Input:", {
@@ -132,7 +138,7 @@ export const studentResolvers = {
           photo: args.input.photo
             ? args.input.photo.startsWith("data:image/")
               ? `[base64 image, ${Math.round(
-                  (args.input.photo.length * 3) / 4 / 1024
+                  (args.input.photo.length * 3) / 4 / 1024,
                 )}KB]`
               : args.input.photo
             : undefined,
@@ -144,8 +150,8 @@ export const studentResolvers = {
         // Remove undefined and null values from input
         const cleanInput = Object.fromEntries(
           Object.entries(restInput).filter(
-            ([_, value]) => value !== undefined && value !== null
-          )
+            ([_, value]) => value !== undefined && value !== null,
+          ),
         );
 
         // Validate input (without photo for now)
@@ -161,11 +167,11 @@ export const studentResolvers = {
           throw new DatabaseError("Student creation returned null");
         }
 
-        const studentId = newStudent._id?.toString() || newStudent.id || "";
+        const studentId = newStudent.id ?? "";
         logger.info(
           `✅ Mutation: createStudent - Student created: ${studentId} (${
             validatedInput.name || "Unknown"
-          })`
+          })`,
         );
 
         // Handle photo upload if base64 data is provided
@@ -180,7 +186,7 @@ export const studentResolvers = {
               photoBase64,
               studentId,
               validatedInput.name || "student",
-              null
+              null,
             );
 
             // Update student with photo path
@@ -190,13 +196,13 @@ export const studentResolvers = {
               });
 
             logger.info(
-              `✅ Mutation: createStudent - Photo uploaded: ${photoPath}`
+              `✅ Mutation: createStudent - Photo uploaded: ${photoPath}`,
             );
             return updatedStudent || newStudent;
           } catch (photoError) {
             logger.error(
               "⚠️ Mutation: createStudent - Error saving photo, but student was created:",
-              photoError
+              photoError,
             );
             // Don't fail the entire operation if photo save fails
             // Student is already created, just return it without photo
@@ -240,7 +246,7 @@ export const studentResolvers = {
     updateStudent: async (
       _: unknown,
       args: UpdateStudentArgs,
-      context: ApolloContext
+      context: ApolloContext,
     ) => {
       try {
         logger.info("✏️ Mutation: updateStudent - ID:", args.id, "Input:", {
@@ -248,7 +254,7 @@ export const studentResolvers = {
           photo: args.input.photo
             ? args.input.photo.startsWith("data:image/")
               ? `[base64 image, ${Math.round(
-                  (args.input.photo.length * 3) / 4 / 1024
+                  (args.input.photo.length * 3) / 4 / 1024,
                 )}KB]`
               : args.input.photo
             : undefined,
@@ -268,7 +274,7 @@ export const studentResolvers = {
         logger.info(
           `📋 Mutation: updateStudent - Existing student: "${
             existingStudent.name || "Unknown"
-          }"`
+          }"`,
         );
 
         // Extract photo from input if it's base64
@@ -277,8 +283,8 @@ export const studentResolvers = {
         // Remove undefined and null values from input
         const cleanInput = Object.fromEntries(
           Object.entries(restInput).filter(
-            ([_, value]) => value !== undefined && value !== null
-          )
+            ([_, value]) => value !== undefined && value !== null,
+          ),
         );
 
         // Validate input (without photo for now)
@@ -298,15 +304,15 @@ export const studentResolvers = {
               photoBase64,
               id,
               validatedInput.name || existingStudent.name || "student",
-              existingStudent.photo || null
+              existingStudent.photo || null,
             );
             logger.info(
-              `✅ Mutation: updateStudent - Photo uploaded: ${photoPath}`
+              `✅ Mutation: updateStudent - Photo uploaded: ${photoPath}`,
             );
           } catch (photoError) {
             logger.error(
               "⚠️ Mutation: updateStudent - Error saving photo:",
-              photoError
+              photoError,
             );
             // If photo save fails, continue with update but without photo
             // Or throw error if you want to fail the entire update
@@ -324,7 +330,7 @@ export const studentResolvers = {
         const updatedStudent = await context.dataSources.students.updateStudent(
           {
             input: { id, ...updateData },
-          }
+          },
         );
 
         if (!updatedStudent) {
@@ -334,7 +340,7 @@ export const studentResolvers = {
         logger.info(
           `✅ Mutation: updateStudent - Success: Student "${
             updatedStudent.name || "Unknown"
-          }" updated`
+          }" updated`,
         );
         return updatedStudent;
       } catch (error) {
@@ -374,7 +380,7 @@ export const studentResolvers = {
     deleteStudent: async (
       _: unknown,
       args: DeleteStudentArgs,
-      context: ApolloContext
+      context: ApolloContext,
     ) => {
       try {
         const id = studentIdSchema.parse(args.id);
@@ -391,23 +397,23 @@ export const studentResolvers = {
         logger.info(
           `📋 Mutation: deleteStudent - Student found: "${
             student.name || "Unknown"
-          }"`
+          }"`,
         );
 
         // Delete photo file if exists (handles both local and Vercel Blob)
         if (student.photo) {
           try {
             logger.info(
-              `📸 Mutation: deleteStudent - Deleting photo: ${student.photo}`
+              `📸 Mutation: deleteStudent - Deleting photo: ${student.photo}`,
             );
             await deleteStudentPhoto(student.photo);
             logger.info(
-              `✅ Mutation: deleteStudent - Photo deleted: ${student.photo}`
+              `✅ Mutation: deleteStudent - Photo deleted: ${student.photo}`,
             );
           } catch (error) {
             logger.warn(
               "⚠️ Mutation: deleteStudent - Error deleting photo file:",
-              error
+              error,
             );
             // Continue with student deletion even if photo deletion fails
           }
@@ -420,7 +426,7 @@ export const studentResolvers = {
         logger.info(
           `✅ Mutation: deleteStudent - Success: Student "${
             student.name || "Unknown"
-          }" deleted`
+          }" deleted`,
         );
         return result;
       } catch (error) {
@@ -437,40 +443,39 @@ export const studentResolvers = {
     deleteStudents: async (
       _: unknown,
       args: DeleteStudentsArgs,
-      context: ApolloContext
+      context: ApolloContext,
     ) => {
       try {
         const ids = deleteStudentsIdsSchema.parse(args.ids);
         logger.info("🗑️ Mutation: deleteStudents - IDs:", ids);
 
         const studentsToDelete = await Promise.all(
-          ids.map((id) => context.dataSources.students.getStudent({ id }))
+          ids.map((id) => context.dataSources.students.getStudent({ id })),
         );
 
         const validStudents = studentsToDelete.filter(
-          (student): student is NonNullable<typeof student> => student !== null
-        ) as StudentParent[];
+          (student: StudentDocument | null): student is StudentDocument =>
+            student !== null
+        );
 
         logger.info(
-          `📋 Mutation: deleteStudents - Found ${validStudents.length} student(s) to delete`
+          `📋 Mutation: deleteStudents - Found ${validStudents.length} student(s) to delete`,
         );
 
         // Delete all photos
         for (const student of validStudents) {
           if (student && student.photo) {
             try {
-              const studentId =
-                student._id?.toString() || student.id || "unknown";
+              const studentId = student.id ?? "unknown";
               logger.info(
-                `📸 Mutation: deleteStudents - Deleting photo: ${student.photo}`
+                `📸 Mutation: deleteStudents - Deleting photo: ${student.photo}`,
               );
               await deleteStudentPhoto(student.photo);
             } catch (error) {
-              const studentId =
-                student._id?.toString() || student.id || "unknown";
+              const studentId = student.id ?? "unknown";
               logger.warn(
                 `⚠️ Mutation: deleteStudents - Error deleting photo for student ${studentId}:`,
-                error
+                error,
               );
               // Continue even if photo deletion fails
             }
@@ -482,7 +487,7 @@ export const studentResolvers = {
         });
 
         logger.info(
-          `✅ Mutation: deleteStudents - Success: Deleted ${deletedCount} student(s)`
+          `✅ Mutation: deleteStudents - Success: Deleted ${deletedCount} student(s)`,
         );
 
         return deletedCount;
@@ -490,10 +495,9 @@ export const studentResolvers = {
         logger.error("❌ Mutation: deleteStudents - Error:", error);
         if (error instanceof ZodError) {
           const first = error.issues[0];
-          throw new ValidationError(
-            first?.message ?? "Invalid student IDs",
-            { ids: error.message }
-          );
+          throw new ValidationError(first?.message ?? "Invalid student IDs", {
+            ids: error.message,
+          });
         }
         if (
           error instanceof NotFoundError ||

@@ -1,8 +1,6 @@
-import { DocumentType } from "@typegoose/typegoose";
-import { Student } from "../models/Student";
+import type { Student } from "@prisma/client";
 
-// Use Typegoose's DocumentType for better type safety
-export type StudentDocument = DocumentType<Student>;
+export type StudentDocument = Student;
 
 export interface StudentParent {
   _id?: string | { toString: () => string };
@@ -12,6 +10,14 @@ export interface StudentParent {
   age?: number;
   address?: string;
   photo?: string;
+  dateOfBirth?: Date | string;
+  phoneNumber?: string;
+  latestEducation?: string;
+  gender?: string;
+  notes?: string;
+  classMode?: string;
+  studyProgram?: string;
+  codingTrack?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -22,6 +28,14 @@ export interface NewStudentInput {
   age?: number | null;
   address?: string | null;
   photo?: string | null;
+  dateOfBirth?: string | null;
+  phoneNumber?: string | null;
+  latestEducation?: string | null;
+  gender?: string | null;
+  notes?: string | null;
+  classMode?: string | null;
+  studyProgram?: string | null;
+  codingTrack?: string | null;
 }
 
 export interface SearchStudentInput {

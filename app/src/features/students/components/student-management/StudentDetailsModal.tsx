@@ -11,7 +11,42 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Calendar, MapPin, Clock } from "lucide-react";
+import {
+  Mail,
+  Calendar,
+  MapPin,
+  Clock,
+  Phone,
+  GraduationCap,
+  Users,
+  FileText,
+  Monitor,
+  BookOpen,
+} from "lucide-react";
+
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+  suffix,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number | null | undefined;
+  suffix?: string;
+}) {
+  const display = value != null && value !== "" ? `${value}${suffix ?? ""}` : "—";
+  return (
+    <>
+      <div className="flex items-center gap-3 text-sm">
+        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+        <dt className="text-muted-foreground w-28 shrink-0">{label}</dt>
+        <dd className="font-medium min-w-0 truncate">{display}</dd>
+      </div>
+      <Separator />
+    </>
+  );
+}
 
 export interface StudentDetailsModalProps {
   student: Student | null;
@@ -61,19 +96,11 @@ export function StudentDetailsModal({
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          <dl className="grid gap-3">
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-              <dt className="text-muted-foreground w-20 shrink-0">Email</dt>
-              <dd className="truncate font-medium min-w-0">{student.email ?? "—"}</dd>
-            </div>
-            <Separator />
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-              <dt className="text-muted-foreground w-20 shrink-0">Age</dt>
-              <dd className="font-medium">{student.age ?? "—"} years</dd>
-            </div>
-            <Separator />
+          <dl className="grid gap-0">
+            <DetailRow icon={Mail} label="Email" value={student.email} />
+            <DetailRow icon={Calendar} label="Age" value={student.age} suffix=" years" />
+            <DetailRow icon={Calendar} label="Date of birth" value={student.dateOfBirth} />
+            <DetailRow icon={Phone} label="Phone" value={student.phoneNumber} />
             <div className="flex items-start gap-3 text-sm">
               <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
@@ -82,9 +109,28 @@ export function StudentDetailsModal({
               </div>
             </div>
             <Separator />
+            <DetailRow icon={GraduationCap} label="Education" value={student.latestEducation} />
+            <DetailRow icon={Users} label="Gender" value={student.gender} />
+            <DetailRow icon={Monitor} label="Class" value={student.classMode} />
+            <DetailRow icon={BookOpen} label="Program" value={student.studyProgram} />
+            {student.studyProgram === "Coding" && (
+              <DetailRow icon={BookOpen} label="Coding track" value={student.codingTrack} />
+            )}
+            {student.notes && (
+              <>
+                <div className="flex items-start gap-3 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <dt className="text-muted-foreground mb-1">Notes</dt>
+                    <dd className="font-medium whitespace-pre-wrap">{student.notes}</dd>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
             <div className="flex items-center gap-3 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-              <dt className="text-muted-foreground w-20 shrink-0">Updated</dt>
+              <dt className="text-muted-foreground w-28 shrink-0">Updated</dt>
               <dd className="font-medium">{formatDateTime(student.updatedAt)}</dd>
             </div>
           </dl>

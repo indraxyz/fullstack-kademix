@@ -6,6 +6,14 @@ export const studentTypeDefs = `
     age: Int
     address: String
     photo: String
+    dateOfBirth: String
+    phoneNumber: String
+    latestEducation: String
+    gender: String
+    notes: String
+    classMode: String
+    studyProgram: String
+    codingTrack: String
     createdAt: String!
     updatedAt: String!
   }
@@ -16,6 +24,14 @@ export const studentTypeDefs = `
     age: Int
     address: String
     photo: String
+    dateOfBirth: String
+    phoneNumber: String
+    latestEducation: String
+    gender: String
+    notes: String
+    classMode: String
+    studyProgram: String
+    codingTrack: String
   }
   input SearchStudentInput {
     searchTerm: String

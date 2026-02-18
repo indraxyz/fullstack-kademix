@@ -9,6 +9,14 @@ export const CREATE_STUDENT = gql`
       age
       address
       photo
+      dateOfBirth
+      phoneNumber
+      latestEducation
+      gender
+      notes
+      classMode
+      studyProgram
+      codingTrack
       createdAt
       updatedAt
     }
@@ -24,6 +32,14 @@ export const UPDATE_STUDENT = gql`
       age
       address
       photo
+      dateOfBirth
+      phoneNumber
+      latestEducation
+      gender
+      notes
+      classMode
+      studyProgram
+      codingTrack
       createdAt
       updatedAt
     }

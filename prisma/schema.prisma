@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+model Student {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String
+  age             Int
+  address         String
+  photo           String?
+  dateOfBirth     DateTime?
+  phoneNumber     String?
+  latestEducation String?
+  gender          String?
+  notes           String?
+  classMode       String?
+  studyProgram    String?
+  codingTrack     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("students")
+}

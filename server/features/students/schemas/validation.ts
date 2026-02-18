@@ -2,6 +2,34 @@ import { z } from "zod";
 
 const nonEmptyString = z.string().min(1, "Value is required");
 
+const latestEducationEnum = z.enum(
+  [
+    "Primary",
+    "Junior",
+    "Senior",
+    "Vocational",
+    "Associate Degree",
+    "Bachelor Degree",
+    "Master",
+    "Doctoral",
+  ],
+  { message: "Invalid latest education" }
+);
+const genderEnum = z.enum(["Male", "Female", "Other"], {
+  message: "Invalid gender",
+});
+const classModeEnum = z.enum(["online", "offline"], {
+  message: "Class must be online or offline",
+});
+const studyProgramEnum = z.enum(
+  ["Office Administration", "Excel", "Coding"],
+  { message: "Invalid study program" }
+);
+const codingTrackEnum = z.enum(
+  ["fundamental", "frontend", "backend", "fullstack"],
+  { message: "Invalid coding track" }
+);
+
 export const studentInputSchema = z
   .object({
     name: z
@@ -25,6 +53,31 @@ export const studentInputSchema = z
       .max(500, "Address must be less than 500 characters")
       .trim(),
     photo: z.string().nullable().optional(),
+    dateOfBirth: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || !isNaN(Date.parse(v)),
+        "Invalid date of birth"
+      ),
+    phoneNumber: z
+      .string()
+      .max(30, "Phone must be less than 30 characters")
+      .trim()
+      .optional()
+      .or(z.literal("")),
+    latestEducation: latestEducationEnum.optional().nullable(),
+    gender: genderEnum.optional().nullable(),
+    notes: z
+      .string()
+      .max(2000, "Notes must be less than 2000 characters")
+      .trim()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    classMode: classModeEnum.optional().nullable(),
+    studyProgram: studyProgramEnum.optional().nullable(),
+    codingTrack: codingTrackEnum.optional().nullable(),
   })
   .strict();
 
