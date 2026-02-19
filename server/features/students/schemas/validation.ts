@@ -25,6 +25,17 @@ const studyProgramEnum = z.enum(
   ["Office Administration", "Excel", "Coding"],
   { message: "Invalid study program" }
 );
+const studyProgramOptionEnum = z.enum(
+  [
+    "Office Administration",
+    "Excel",
+    "Coding – Fundamental",
+    "Coding – Frontend",
+    "Coding – Backend",
+    "Coding – Fullstack",
+  ],
+  { message: "Invalid study program" }
+);
 const codingTrackEnum = z.enum(
   ["fundamental", "frontend", "backend", "fullstack"],
   { message: "Invalid coding track" }
@@ -78,8 +89,17 @@ export const studentInputSchema = z
     classMode: classModeEnum.optional().nullable(),
     studyProgram: studyProgramEnum.optional().nullable(),
     codingTrack: codingTrackEnum.optional().nullable(),
+    studyPrograms: z.array(studyProgramOptionEnum).optional().nullable(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => {
+      const hasPrograms = Array.isArray(data.studyPrograms) && data.studyPrograms.length >= 1;
+      const hasLegacy = data.studyProgram != null;
+      return hasPrograms || hasLegacy;
+    },
+    { message: "Provide at least one study program (studyPrograms or studyProgram)", path: ["studyPrograms"] }
+  );
 
 export const searchStudentInputSchema = z
   .object({

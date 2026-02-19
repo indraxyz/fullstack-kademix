@@ -68,6 +68,20 @@ export const studentResolvers = {
       if (!d) return null;
       return formatDate(d);
     },
+
+    studyPrograms: (parent: StudentParent): string[] => {
+      const raw = parent.studyPrograms;
+      if (Array.isArray(raw) && raw.length > 0) return raw as string[];
+      if (parent.studyProgram) {
+        if (parent.studyProgram === "Coding" && parent.codingTrack) {
+          const track = parent.codingTrack as string;
+          const label = track.charAt(0).toUpperCase() + track.slice(1);
+          return [`Coding – ${label}`];
+        }
+        return [parent.studyProgram];
+      }
+      return [];
+    },
   },
   Query: {
     students: async (_: unknown, args: QueryArgs, context: ApolloContext) => {

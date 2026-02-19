@@ -20,8 +20,7 @@ const defaultValues: StudentFormValues = {
   gender: undefined,
   notes: "",
   classMode: undefined,
-  studyProgram: undefined,
-  codingTrack: undefined,
+  studyPrograms: undefined,
 };
 
 function fileToBase64(file: File): Promise<string> {
@@ -35,6 +34,7 @@ function fileToBase64(file: File): Promise<string> {
 
 export function useStudentForm({
   editingStudent,
+  initialOverrides,
   onSubmit,
   onReset,
 }: UseStudentFormProps) {
@@ -49,6 +49,13 @@ export function useStudentForm({
 
   useEffect(() => {
     if (editingStudent) {
+      const studyPrograms = (editingStudent.studyPrograms?.length
+        ? editingStudent.studyPrograms
+        : editingStudent.studyProgram
+          ? editingStudent.studyProgram === "Coding" && editingStudent.codingTrack
+            ? [`Coding – ${editingStudent.codingTrack.charAt(0).toUpperCase()}${editingStudent.codingTrack.slice(1)}`]
+            : [editingStudent.studyProgram]
+          : undefined) as StudentFormValues["studyPrograms"];
       form.reset({
         name: editingStudent.name ?? "",
         email: editingStudent.email ?? "",
@@ -61,17 +68,18 @@ export function useStudentForm({
         gender: (editingStudent.gender ?? undefined) as StudentFormValues["gender"],
         notes: editingStudent.notes ?? "",
         classMode: (editingStudent.classMode ?? undefined) as StudentFormValues["classMode"],
-        studyProgram: (editingStudent.studyProgram ?? undefined) as StudentFormValues["studyProgram"],
-        codingTrack: (editingStudent.codingTrack ?? undefined) as StudentFormValues["codingTrack"],
+        studyPrograms,
       });
       setPhotoPreview(editingStudent.photo ?? null);
       setPhotoFile(null);
     } else {
-      form.reset(defaultValues);
+      const base = { ...defaultValues };
+      if (initialOverrides?.studyPrograms != null) base.studyPrograms = initialOverrides.studyPrograms as StudentFormValues["studyPrograms"];
+      form.reset(base);
       setPhotoFile(null);
       setPhotoPreview(null);
     }
-  }, [editingStudent, form.reset]);
+  }, [editingStudent, initialOverrides, form.reset]);
 
   const handlePhotoChange = useCallback(
     (file: File | null) => {
@@ -137,8 +145,7 @@ export function useStudentForm({
           ...(values.gender ? { gender: values.gender } : {}),
           ...(values.notes?.trim() ? { notes: values.notes.trim() } : {}),
           ...(values.classMode ? { classMode: values.classMode } : {}),
-          ...(values.studyProgram ? { studyProgram: values.studyProgram } : {}),
-          ...(values.codingTrack ? { codingTrack: values.codingTrack } : {}),
+          ...(values.studyPrograms?.length ? { studyPrograms: values.studyPrograms } : {}),
         };
         if (!input.photo) delete input.photo;
         await onSubmit(input);
@@ -151,12 +158,29 @@ export function useStudentForm({
     [form, photoFile, onSubmit, onReset],
   );
 
+  const formFieldNames: (keyof StudentFormValues)[] = [
+    "name",
+    "email",
+    "age",
+    "address",
+    "photo",
+    "dateOfBirth",
+    "phoneNumber",
+    "latestEducation",
+    "gender",
+    "notes",
+    "classMode",
+    "studyPrograms",
+  ];
+
   const setFieldErrors = useCallback(
     (fieldErrors: StudentFormErrors) => {
       (
         Object.entries(fieldErrors) as [keyof StudentFormErrors, string][]
       ).forEach(([field, message]) => {
-        if (message) form.setError(field, { message });
+        if (message && formFieldNames.includes(field as keyof StudentFormValues)) {
+          form.setError(field as keyof StudentFormValues, { message });
+        }
       });
     },
     [form],
@@ -174,8 +198,7 @@ export function useStudentForm({
     gender: form.watch("gender") ?? undefined,
     notes: form.watch("notes") ?? "",
     classMode: form.watch("classMode") ?? undefined,
-    studyProgram: form.watch("studyProgram") ?? undefined,
-    codingTrack: form.watch("codingTrack") ?? undefined,
+    studyPrograms: form.watch("studyPrograms") ?? undefined,
   };
 
   const errors: StudentFormErrors = {
@@ -190,20 +213,22 @@ export function useStudentForm({
     gender: form.formState.errors.gender?.message,
     notes: form.formState.errors.notes?.message,
     classMode: form.formState.errors.classMode?.message,
-    studyProgram: form.formState.errors.studyProgram?.message,
-    codingTrack: form.formState.errors.codingTrack?.message,
+    studyPrograms: form.formState.errors.studyPrograms?.message,
   };
 
   const handleInputChange = useCallback(
-    (field: keyof StudentFormData, value: string | number | undefined) => {
+    (field: keyof StudentFormData, value: string | number | undefined | string[]) => {
       if (field === "age") {
-        form.setValue(
-          "age",
-          value === undefined ? 0 : (typeof value === "string" ? parseInt(value, 10) : value) || 0
-        );
+        const num = value === undefined ? 0 : typeof value === "number" ? value : typeof value === "string" ? parseInt(value, 10) : 0;
+        form.setValue("age", Number.isNaN(num) ? 0 : num);
         return;
       }
-      form.setValue(field, value as never);
+      if (field === "studyPrograms") {
+        form.setValue("studyPrograms", Array.isArray(value) ? (value as StudentFormValues["studyPrograms"]) : undefined);
+        return;
+      }
+      if (field === "studyProgram" || field === "codingTrack") return;
+      form.setValue(field as keyof StudentFormValues, value as never);
     },
     [form],
   );

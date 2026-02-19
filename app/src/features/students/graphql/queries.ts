@@ -17,6 +17,7 @@ export const GET_STUDENTS = gql`
       classMode
       studyProgram
       codingTrack
+      studyPrograms
       createdAt
       updatedAt
     }
@@ -40,6 +41,7 @@ export const GET_STUDENT = gql`
       classMode
       studyProgram
       codingTrack
+      studyPrograms
       createdAt
       updatedAt
     }

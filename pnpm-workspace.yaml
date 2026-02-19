@@ -1,4 +1,9 @@
 onlyBuiltDependencies:
   - '@apollo/protobufjs'
+  - '@prisma/client'
+  - '@prisma/engines'
   - '@tailwindcss/oxide'
+  - msw
+  - prisma
   - sharp
+  - unrs-resolver

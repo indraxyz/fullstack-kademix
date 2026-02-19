@@ -101,6 +101,13 @@ Optional (photo upload):
 BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
 ```
 
+Admin panel login (required to access `/admin`):
+
+```env
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your_secure_password
+```
+
 4. Start the development server:
 
 ```bash
@@ -108,8 +115,12 @@ pnpm dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
-   - **Homepage** (`/`): Landing page with statistics and feature overview
-   - **Student Management** (`/src`): Full CRUD, cards/table view, filter dialog, bulk delete
+   - **Homepage** (`/`): Kademix landing (hero, programs, activities, testimonials, contact)
+   - **Register** (`/students-register`): Public student registration form (no login)
+   - **Cart** (`/cart`): Enrollment cart (localStorage); checkout goes to register with programs pre-filled
+   - **Admin Login** (`/admin-login`): Admin sign-in (requires `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env`)
+   - **Admin** (`/admin`): Admin dashboard (requires login)
+   - **Student Management** (`/admin/students`): Admin-only CRUD, cards/table view, filter dialog, bulk delete, multiple study programs per student
 
 ## Project Structure
 

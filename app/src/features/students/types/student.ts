@@ -13,6 +13,7 @@ export interface Student {
   classMode?: string | null;
   studyProgram?: string | null;
   codingTrack?: string | null;
+  studyPrograms?: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +32,7 @@ export interface StudentFormData {
   classMode?: string | null;
   studyProgram?: string | null;
   codingTrack?: string | null;
+  studyPrograms?: string[] | null;
 }
 
 export interface StudentFormErrors {
@@ -47,10 +49,12 @@ export interface StudentFormErrors {
   classMode?: string;
   studyProgram?: string;
   codingTrack?: string;
+  studyPrograms?: string;
 }
 
 export interface UseStudentFormProps {
   editingStudent?: Student | null;
+  initialOverrides?: Partial<StudentFormData>;
   onSubmit: (data: StudentFormData) => Promise<void>;
   onReset: () => void;
 }

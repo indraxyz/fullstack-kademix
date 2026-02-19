@@ -23,6 +23,7 @@ const CREATE_STUDENT_MUTATION = `
       classMode
       studyProgram
       codingTrack
+      studyPrograms
       createdAt
       updatedAt
     }

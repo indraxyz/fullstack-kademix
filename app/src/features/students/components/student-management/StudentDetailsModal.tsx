@@ -112,10 +112,19 @@ export function StudentDetailsModal({
             <DetailRow icon={GraduationCap} label="Education" value={student.latestEducation} />
             <DetailRow icon={Users} label="Gender" value={student.gender} />
             <DetailRow icon={Monitor} label="Class" value={student.classMode} />
-            <DetailRow icon={BookOpen} label="Program" value={student.studyProgram} />
-            {student.studyProgram === "Coding" && (
-              <DetailRow icon={BookOpen} label="Coding track" value={student.codingTrack} />
-            )}
+            <DetailRow
+              icon={BookOpen}
+              label="Programs"
+              value={
+                student.studyPrograms?.length
+                  ? student.studyPrograms.join(", ")
+                  : student.studyProgram
+                    ? student.studyProgram === "Coding" && student.codingTrack
+                      ? `Coding – ${student.codingTrack.charAt(0).toUpperCase()}${student.codingTrack.slice(1)}`
+                      : student.studyProgram
+                    : undefined
+              }
+            />
             {student.notes && (
               <>
                 <div className="flex items-start gap-3 text-sm">

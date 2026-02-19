@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Student Management",
-  description: "Manage students with a modern interface",
+  title: "Kademix — Computer Training Institute",
+  description:
+    "Kademix offers training in Office Administration, Excel, and Coding. Register and start learning today.",
 };
 
 export default function RootLayout({

@@ -27,7 +27,7 @@ export interface StudentFormModalProps {
   formData: StudentFormData;
   errors: StudentFormErrors;
   isSubmitting: boolean;
-  onInputChange: (field: keyof StudentFormData, value: string | number | undefined) => void;
+  onInputChange: (field: keyof StudentFormData, value: string | number | undefined | string[]) => void;
   onPhotoChange?: (file: File | null) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;

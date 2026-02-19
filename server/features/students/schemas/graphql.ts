@@ -14,6 +14,7 @@ export const studentTypeDefs = `
     classMode: String
     studyProgram: String
     codingTrack: String
+    studyPrograms: [String]
     createdAt: String!
     updatedAt: String!
   }
@@ -32,6 +33,7 @@ export const studentTypeDefs = `
     classMode: String
     studyProgram: String
     codingTrack: String
+    studyPrograms: [String]
   }
   input SearchStudentInput {
     searchTerm: String

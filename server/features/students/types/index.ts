@@ -18,6 +18,7 @@ export interface StudentParent {
   classMode?: string;
   studyProgram?: string;
   codingTrack?: string;
+  studyPrograms?: string[] | unknown;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -36,6 +37,7 @@ export interface NewStudentInput {
   classMode?: string | null;
   studyProgram?: string | null;
   codingTrack?: string | null;
+  studyPrograms?: string[] | null;
 }
 
 export interface SearchStudentInput {

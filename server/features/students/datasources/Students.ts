@@ -5,6 +5,7 @@ import { DatabaseError, NotFoundError } from "@/server/shared/errors";
 import type { StudentDocument } from "../types";
 
 function toPrismaCreateInput(input: StudentInput): Prisma.StudentCreateInput {
+  const hasStudyPrograms = Array.isArray(input.studyPrograms) && input.studyPrograms.length > 0;
   return {
     name: input.name,
     email: input.email,
@@ -17,8 +18,9 @@ function toPrismaCreateInput(input: StudentInput): Prisma.StudentCreateInput {
     gender: input.gender ?? undefined,
     notes: input.notes?.trim() || undefined,
     classMode: input.classMode ?? undefined,
-    studyProgram: input.studyProgram ?? undefined,
-    codingTrack: input.codingTrack ?? undefined,
+    studyProgram: hasStudyPrograms ? undefined : (input.studyProgram ?? undefined),
+    codingTrack: hasStudyPrograms ? undefined : (input.codingTrack ?? undefined),
+    studyPrograms: hasStudyPrograms ? input.studyPrograms : (input.studyPrograms ?? undefined),
   };
 }
 

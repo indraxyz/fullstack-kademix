@@ -73,7 +73,7 @@ function FormField({
 export interface StudentFormFieldsProps {
   formData: StudentFormData;
   errors: StudentFormErrors;
-  onInputChange: (field: keyof StudentFormData, value: string | number | undefined) => void;
+  onInputChange: (field: keyof StudentFormData, value: string | number | undefined | string[]) => void;
   showPhotoSection?: boolean;
   photoPreview?: string | null;
   onPhotoChange?: (file: File | null) => void;
@@ -402,72 +402,58 @@ export function StudentFormFields({
           </Select>
         </FormField>
 
-        <FormField
-          label="Study Program"
-          error={errors.studyProgram}
-          htmlFor="studyProgram"
-          icon={BookOpen}
-        >
-          <Select
-            value={formData.studyProgram ?? ""}
-            onValueChange={(v) => {
-              onInputChange("studyProgram", v || undefined);
-              if (v !== "Coding") onInputChange("codingTrack", undefined);
-            }}
-          >
-            <SelectTrigger
-              id="studyProgram"
-              className={cn(
-                "w-full h-10",
-                errors.studyProgram &&
-                  "border-destructive focus-visible:ring-destructive/30"
-              )}
-            >
-              <SelectValue placeholder="Select program" />
-            </SelectTrigger>
-            <SelectContent>
-              {STUDENT_FORM_CONSTANTS.studyProgramOptions.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
       </div>
 
-      {formData.studyProgram === "Coding" && (
-        <FormField
-          label="Coding Track"
-          error={errors.codingTrack}
-          htmlFor="codingTrack"
-          icon={BookOpen}
-        >
-          <Select
-            value={formData.codingTrack ?? ""}
-            onValueChange={(v) =>
-              onInputChange("codingTrack", v || (undefined as never))
-            }
-          >
-            <SelectTrigger
-              id="codingTrack"
-              className={cn(
-                "w-full h-10",
-                errors.codingTrack &&
-                  "border-destructive focus-visible:ring-destructive/30"
-              )}
+      <FormField
+        label="Study programs"
+        error={errors.studyPrograms}
+        htmlFor="studyPrograms"
+        icon={BookOpen}
+      >
+        <div className="flex flex-wrap gap-2">
+          {(formData.studyPrograms ?? []).map((p) => (
+            <span
+              key={p}
+              className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary"
             >
-              <SelectValue placeholder="Select track" />
+              {p}
+              <button
+                type="button"
+                aria-label={`Remove ${p}`}
+                className="rounded hover:bg-primary/20 p-0.5"
+                onClick={() => {
+                  const next = (formData.studyPrograms ?? []).filter((x) => x !== p);
+                  onInputChange("studyPrograms", next.length ? next : undefined);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          <Select
+            value=""
+            onValueChange={(v) => {
+              if (!v) return;
+              const current = formData.studyPrograms ?? [];
+              if (current.includes(v)) return;
+              onInputChange("studyPrograms", [...current, v]);
+            }}
+          >
+            <SelectTrigger id="studyPrograms" className="w-[200px] h-9">
+              <SelectValue placeholder="Add program" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fundamental">Fundamental</SelectItem>
-              <SelectItem value="frontend">Frontend</SelectItem>
-              <SelectItem value="backend">Backend</SelectItem>
-              <SelectItem value="fullstack">Fullstack</SelectItem>
+              {STUDENT_FORM_CONSTANTS.studyProgramOptions
+                .filter((opt) => !(formData.studyPrograms ?? []).includes(opt))
+                .map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
-        </FormField>
-      )}
+        </div>
+      </FormField>
 
       <FormField
         label="Notes"

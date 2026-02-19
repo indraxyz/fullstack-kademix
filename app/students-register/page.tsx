@@ -2,18 +2,38 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useStudentForm } from "../features/students/hooks/useStudentForm";
-import { useCreateStudentSWR } from "../features/students/hooks/useCreateStudentSWR";
-import { StudentFormFields } from "../features/students/components/student-management/StudentFormFields";
+import { useEffect, useState } from "react";
+import { useStudentForm } from "@/app/src/features/students/hooks/useStudentForm";
+import { useCreateStudentSWR } from "@/app/src/features/students/hooks/useCreateStudentSWR";
+import { StudentFormFields } from "@/app/src/features/students/components/student-management/StudentFormFields";
+import { getCart, clearCart } from "@/app/src/cart/cart-store";
+import type { StudentFormData } from "@/app/src/features/students/types/student";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
-export default function RegisterStudentPage() {
+export default function StudentsRegisterPage() {
   const router = useRouter();
+  const [cartOverrides, setCartOverrides] = useState<Partial<StudentFormData>>({});
   const { createStudent, isMutating } = useCreateStudentSWR();
+
+  useEffect(() => {
+    const items = getCart();
+    if (items.length > 0) {
+      const programs = [
+        ...new Set(
+          items.map((i) =>
+            i.codingTrack
+              ? `Coding – ${i.codingTrack.charAt(0).toUpperCase()}${i.codingTrack.slice(1)}`
+              : i.studyProgram,
+          ),
+        ),
+      ];
+      setCartOverrides({ studyPrograms: programs });
+    }
+  }, []);
 
   const {
     formData,
@@ -26,13 +46,29 @@ export default function RegisterStudentPage() {
     photoPreview,
   } = useStudentForm({
     editingStudent: null,
+    initialOverrides: cartOverrides,
     onSubmit: async (data) => {
       try {
-        const student = await createStudent(data);
+        const cartItems = getCart();
+        const studyPrograms =
+          cartItems.length > 0
+            ? [
+                ...new Set(
+                  cartItems.map((i) =>
+                    i.codingTrack
+                      ? `Coding – ${i.codingTrack.charAt(0).toUpperCase()}${i.codingTrack.slice(1)}`
+                      : i.studyProgram,
+                  ),
+                ),
+              ]
+            : undefined;
+        const payload = studyPrograms?.length ? { ...data, studyPrograms } : data;
+        const student = await createStudent(payload);
+        clearCart();
         toast.success("Registration successful", {
           description: `${student.name} has been added to the students list.`,
         });
-        router.push("/src");
+        router.push("/");
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Registration failed";
@@ -59,7 +95,7 @@ export default function RegisterStudentPage() {
           <Button variant="ghost" asChild className="-ml-4">
             <Link href="/" className="inline-flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Back to Home
+              Back to Kademix
             </Link>
           </Button>
           <ThemeToggle />
@@ -97,7 +133,7 @@ export default function RegisterStudentPage() {
                 />
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4">
                   <Button type="button" variant="outline" asChild>
-                    <Link href="/src">Cancel</Link>
+                    <Link href="/">Cancel</Link>
                   </Button>
                   <Button type="submit" disabled={submitting} className="min-w-[160px]">
                     {submitting ? (
@@ -118,9 +154,9 @@ export default function RegisterStudentPage() {
           </Card>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Already managing students?{" "}
-            <Link href="/src" className="text-primary hover:underline">
-              Go to Student Management
+            Admin?{" "}
+            <Link href="/admin-login" className="text-primary hover:underline">
+              Login to manage students
             </Link>
           </p>
         </div>
