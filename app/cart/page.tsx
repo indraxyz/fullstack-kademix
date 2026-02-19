@@ -121,14 +121,14 @@ export default function CartPage() {
                 <div className="rounded-lg border border-dashed py-8 text-center text-muted-foreground">
                   <p className="mb-4">Your cart is empty.</p>
                   <p className="text-sm mb-4">
-                    Use the select above or browse programs on the home page.
+                    Use the select above for adding programs.
                   </p>
-                  <Button asChild variant="outline" className="gap-2">
+                  {/* <Button asChild variant="outline" className="gap-2">
                     <Link href="/#programs">
                       <PlusCircle className="h-4 w-4" />
                       Browse programs
                     </Link>
-                  </Button>
+                  </Button> */}
                 </div>
               ) : (
                 <>

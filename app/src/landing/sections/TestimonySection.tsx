@@ -36,11 +36,13 @@ export function TestimonySection() {
           {testimonials.map((t) => (
             <Card
               key={t.name}
-              className="shadow-lg border-l-4 border-l-primary"
+              className="shadow-lg border-l-4 border-l-primary py-0"
             >
               <CardContent className="p-6">
                 <Quote className="w-10 h-10 text-primary/50 mb-4" />
-                <p className="text-muted-foreground mb-4 italic">&ldquo;{t.text}&rdquo;</p>
+                <p className="text-muted-foreground mb-4 italic">
+                  &ldquo;{t.text}&rdquo;
+                </p>
                 <p className="font-semibold text-foreground">{t.name}</p>
                 <p className="text-sm text-muted-foreground">{t.role}</p>
               </CardContent>

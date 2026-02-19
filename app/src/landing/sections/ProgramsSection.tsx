@@ -8,7 +8,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookOpen, FileSpreadsheet, Code, ArrowRight, ChevronDown } from "lucide-react";
+import {
+  BookOpen,
+  FileSpreadsheet,
+  Code,
+  ArrowRight,
+  ChevronDown,
+} from "lucide-react";
 import { STUDENT_FORM_CONSTANTS } from "@/app/src/shared/validation/studentSchema";
 import { useCart } from "@/app/src/cart/useCart";
 import { toast } from "sonner";
@@ -67,7 +73,7 @@ export function ProgramsSection() {
                 key={program}
                 className="shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
-                <CardContent className="p-6">
+                <CardContent className="px-6">
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4">
                     <Icon className="w-6 h-6" />
                   </div>
@@ -99,7 +105,10 @@ export function ProgramsSection() {
                           <ChevronDown className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
+                      <DropdownMenuContent
+                        align="start"
+                        className="w-[--radix-dropdown-menu-trigger-width]"
+                      >
                         {codingTracks.map((t) => (
                           <DropdownMenuItem
                             key={t.value}

@@ -29,7 +29,7 @@ export function ActivitiesSection() {
           {placeholderItems.map((item) => (
             <Card
               key={item.id}
-              className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group"
+              className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group py-0"
             >
               <div className="aspect-video bg-muted flex items-center justify-center relative">
                 {item.type === "video" ? (

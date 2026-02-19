@@ -470,6 +470,7 @@ export default function StudentManagementAdvanced() {
                     key={student.id}
                     student={student}
                     disabled={isAnyLoading}
+                    onViewDetails={handleDetails}
                     onEdit={handleEdit}
                     onDeleteRequest={requestDelete}
                     isSelected={selectedStudents.has(student.id)}

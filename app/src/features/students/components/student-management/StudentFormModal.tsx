@@ -59,9 +59,8 @@ export function StudentFormModal({
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md md:max-w-lg overflow-hidden p-0">
-        {/* Header with gradient background */}
-        <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background px-6 pt-6 pb-4">
+      <DialogContent className="sm:max-w-md md:max-w-lg max-h-[90vh] overflow-hidden p-0 flex flex-col">
+        <div className="shrink-0 relative bg-gradient-to-br from-primary/10 via-primary/5 to-background px-6 pt-6 pb-4">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div
@@ -92,9 +91,8 @@ export function StudentFormModal({
           </DialogHeader>
         </div>
 
-        {/* Error Banner */}
         {formError && (
-          <div className="mx-6 mt-4 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive animate-in slide-in-from-top-2 duration-300">
+          <div className="shrink-0 mx-6 mt-4 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive animate-in slide-in-from-top-2 duration-300">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
             <p className="flex-1">{formError}</p>
             <Button
@@ -109,19 +107,20 @@ export function StudentFormModal({
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="px-6 py-4 space-y-5">
-          <StudentFormFields
-            formData={formData}
-            errors={errors}
-            onInputChange={onInputChange}
-            showPhotoSection={true}
-            photoPreview={photoPreview}
-            onPhotoChange={onPhotoChange}
-            getInitials={getInitials}
-          />
-          <Separator />
+        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-5">
+            <StudentFormFields
+              formData={formData}
+              errors={errors}
+              onInputChange={onInputChange}
+              showPhotoSection={true}
+              photoPreview={photoPreview}
+              onPhotoChange={onPhotoChange}
+              getInitials={getInitials}
+            />
+          </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="shrink-0 gap-2 sm:gap-2 border-t bg-background px-6 py-4">
             <Button
               type="button"
               variant="outline"

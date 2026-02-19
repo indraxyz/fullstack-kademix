@@ -92,14 +92,14 @@ export function ConfirmDialog({
           </div>
 
           {/* Warning Message */}
-          <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+          {/* <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
             <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-500 mt-0.5" />
             <p>
               {isBulk
                 ? `You are about to delete ${count} student record${count !== 1 ? "s" : ""}. This will remove all associated data including photos and cannot be recovered.`
                 : `You are about to delete the student record for "${studentName}". This will remove all associated data including photos and cannot be recovered.`}
             </p>
-          </div>
+          </div> */}
         </div>
 
         <Separator />
@@ -118,7 +118,7 @@ export function ConfirmDialog({
               "flex-1 sm:flex-none min-w-[140px]",
               "bg-destructive text-destructive-foreground",
               "hover:bg-destructive/90",
-              "focus-visible:ring-destructive/30"
+              "focus-visible:ring-destructive/30",
             )}
           >
             {isProcessing ? (
@@ -129,7 +129,9 @@ export function ConfirmDialog({
             ) : (
               <>
                 <Trash2 className="h-4 w-4" />
-                {isBulk ? `Delete ${count} Student${count !== 1 ? "s" : ""}` : "Delete Student"}
+                {isBulk
+                  ? `Delete ${count} Student${count !== 1 ? "s" : ""}`
+                  : "Delete Student"}
               </>
             )}
           </AlertDialogAction>

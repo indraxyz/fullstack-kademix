@@ -15,8 +15,8 @@ export function HeroSection() {
             Kademix
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground mb-8">
-            Computer training institute — learn Office, Excel, and Coding with
-            experienced instructors. Start your journey today.
+            Computer training institute. <br /> Learn Office, Excel, and Coding
+            with experienced instructors. <br /> Start your journey today.
           </p>
           <Button size="lg" asChild className="gap-2">
             <Link href="/students-register">
