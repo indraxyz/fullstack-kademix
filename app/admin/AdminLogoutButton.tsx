@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { logout } from "@/app/src/auth/actions";
+import { logout } from "@/app/src/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,

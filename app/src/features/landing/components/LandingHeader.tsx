@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GraduationCap, Menu, ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import { useCart } from "@/app/src/cart/useCart";
+import { useCart } from "@/app/src/features/cart/useCart";
 
 const navLinks = [
   { href: "/#programs", label: "Programs" },

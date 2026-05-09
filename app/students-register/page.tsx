@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useStudentForm } from "@/app/src/features/students/hooks/useStudentForm";
 import { useCreateStudentSWR } from "@/app/src/features/students/hooks/useCreateStudentSWR";
 import { StudentFormFields } from "@/app/src/features/students/components/student-management/StudentFormFields";
-import { getCart, clearCart } from "@/app/src/cart/cart-store";
+import { getCart, clearCart } from "@/app/src/features/cart/cart-store";
 import type { StudentFormData } from "@/app/src/features/students/types/student";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";

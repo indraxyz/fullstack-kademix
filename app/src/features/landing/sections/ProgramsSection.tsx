@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { STUDENT_FORM_CONSTANTS } from "@/app/src/shared/validation/studentSchema";
-import { useCart } from "@/app/src/cart/useCart";
+import { useCart } from "@/app/src/features/cart/useCart";
 import { toast } from "sonner";
 
 const programIcons: Record<

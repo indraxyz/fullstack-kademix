@@ -1,4 +1,4 @@
-import { LandingHeader } from "./src/landing/components/LandingHeader";
+import { LandingHeader } from "./src/features/landing/components/LandingHeader";
 import {
   HeroSection,
   ProgramsSection,
@@ -6,7 +6,7 @@ import {
   TestimonySection,
   ContactSection,
   FooterSection,
-} from "./src/landing/sections";
+} from "./src/features/landing/sections";
 
 export default function LandingPage() {
   return (

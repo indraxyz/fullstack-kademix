@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/app/src/cart/useCart";
+import { useCart } from "@/app/src/features/cart/useCart";
 import { STUDENT_FORM_CONSTANTS } from "@/app/src/shared/validation/studentSchema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
