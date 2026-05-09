@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/#activities", label: "Activities" },
   { href: "/#testimonials", label: "Testimonials" },
   { href: "/#contact", label: "Contact" },
+  { href: "/learn", label: "Learn" },
 ];
 
 export function LandingHeader() {

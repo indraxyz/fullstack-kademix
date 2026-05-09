@@ -13,7 +13,7 @@ export function LearnLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col md:flex-row w-full max-w-[1600px] mx-auto items-start">
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-[260px] lg:w-[300px] border-b md:border-b-0 md:border-r border-border/50 bg-card/30 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 z-10 overflow-hidden flex flex-col">
-        <ScrollArea className="flex-1 py-6 md:py-8 px-4 md:px-6">
+        <ScrollArea className="flex-1 h-full py-6 md:py-8 px-4 md:px-6">
           <div className="mb-8">
             <Link href="/learn" className="text-xl md:text-2xl font-extrabold tracking-tight text-primary flex items-center gap-2 px-2">
               Learning Center

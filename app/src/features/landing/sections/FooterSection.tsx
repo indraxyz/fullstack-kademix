@@ -36,6 +36,12 @@ export function FooterSection() {
               Contact
             </Link>
             <Link
+              href="/learn"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Learn
+            </Link>
+            <Link
               href="/admin"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >

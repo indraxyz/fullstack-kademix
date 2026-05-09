@@ -7,7 +7,22 @@ import { useStudentForm } from "@/app/src/features/students/hooks/useStudentForm
 import { useCreateStudentSWR } from "@/app/src/features/students/hooks/useCreateStudentSWR";
 import { StudentFormFields } from "@/app/src/features/students/components/student-management/StudentFormFields";
 import { getCart, clearCart } from "@/app/src/features/cart/cart-store";
+import { PROGRAM_TRACKS } from "@/app/src/shared/validation/studentSchema";
 import type { StudentFormData } from "@/app/src/features/students/types/student";
+
+const trackLabels: Record<string, string> = {};
+Object.values(PROGRAM_TRACKS).forEach((tracks) => {
+  tracks.forEach((t) => {
+    trackLabels[t.value] = t.label;
+  });
+});
+
+const formatCartItem = (i: { studyProgram: string; codingTrack?: string }) => {
+  if (i.codingTrack) {
+    return `${i.studyProgram} – ${trackLabels[i.codingTrack] || i.codingTrack}`;
+  }
+  return i.studyProgram;
+};
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -24,11 +39,7 @@ export default function StudentsRegisterPage() {
     if (items.length > 0) {
       const programs = [
         ...new Set(
-          items.map((i) =>
-            i.codingTrack
-              ? `Coding – ${i.codingTrack.charAt(0).toUpperCase()}${i.codingTrack.slice(1)}`
-              : i.studyProgram,
-          ),
+          items.map((i) => formatCartItem(i)),
         ),
       ];
       setCartOverrides({ studyPrograms: programs });
@@ -54,11 +65,7 @@ export default function StudentsRegisterPage() {
           cartItems.length > 0
             ? [
                 ...new Set(
-                  cartItems.map((i) =>
-                    i.codingTrack
-                      ? `Coding – ${i.codingTrack.charAt(0).toUpperCase()}${i.codingTrack.slice(1)}`
-                      : i.studyProgram,
-                  ),
+                  cartItems.map((i) => formatCartItem(i)),
                 ),
               ]
             : undefined;

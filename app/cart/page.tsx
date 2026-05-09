@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/src/features/cart/useCart";
-import { STUDENT_FORM_CONSTANTS } from "@/app/src/shared/validation/studentSchema";
+import { STUDENT_FORM_CONSTANTS, PROGRAM_TRACKS } from "@/app/src/shared/validation/studentSchema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -25,20 +25,22 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const codingTrackLabels: Record<string, string> = {
-  fundamental: "Fundamental",
-  frontend: "Frontend",
-  backend: "Backend",
-  fullstack: "Fullstack",
-};
+const trackLabels: Record<string, string> = {};
+Object.values(PROGRAM_TRACKS).forEach((tracks) => {
+  tracks.forEach((t) => {
+    trackLabels[t.value] = t.label;
+  });
+});
 
 function optionToCartItem(option: string): {
   studyProgram: string;
   codingTrack?: string;
 } {
-  if (option.startsWith("Coding – ")) {
-    const track = option.slice("Coding – ".length).toLowerCase();
-    return { studyProgram: "Coding", codingTrack: track };
+  if (option.includes(" – ")) {
+    const [program, trackLabel] = option.split(" – ");
+    const tracks = PROGRAM_TRACKS[program as keyof typeof PROGRAM_TRACKS];
+    const track = tracks?.find(t => t.label === trackLabel);
+    return { studyProgram: program, codingTrack: track?.value };
   }
   return { studyProgram: option };
 }
@@ -141,7 +143,7 @@ export default function CartPage() {
                         <span className="font-medium">
                           {item.studyProgram}
                           {item.codingTrack
-                            ? ` · ${codingTrackLabels[item.codingTrack] ?? item.codingTrack}`
+                            ? ` · ${trackLabels[item.codingTrack] ?? item.codingTrack}`
                             : ""}
                         </span>
                         <Button

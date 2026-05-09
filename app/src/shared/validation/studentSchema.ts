@@ -14,25 +14,45 @@ const genderOptions = ["Male", "Female", "Other"] as const;
 const classModeOptions = ["online", "offline"] as const;
 const studyProgramCards = [
   "Office Administration",
-  "Excel",
-  "Coding",
+  "Coding for Kids",
+  "Web Development",
 ] as const;
 
 const studyProgramOptions = [
-  "Office Administration",
-  "Excel",
-  "Coding – Fundamental",
-  "Coding – Frontend",
-  "Coding – Backend",
-  "Coding – Fullstack",
+  "Office Administration – Word",
+  "Office Administration – Excel",
+  "Office Administration – PowerPoint",
+  "Coding for Kids – Scratch",
+  "Coding for Kids – App Inventor",
+  "Coding for Kids – Python",
+  "Coding for Kids – Roblox Studio",
+  "Coding for Kids – Minecraft Education",
+  "Web Development – Junior",
+  "Web Development – Senior",
+  "Web Development – University",
+  "Web Development – Professional",
 ] as const;
 
-const codingTrackOptions = [
-  "fundamental",
-  "frontend",
-  "backend",
-  "fullstack",
-] as const;
+export const PROGRAM_TRACKS: Record<string, { value: string; label: string }[]> = {
+  "Office Administration": [
+    { value: "word", label: "Word" },
+    { value: "excel", label: "Excel" },
+    { value: "powerpoint", label: "PowerPoint" },
+  ],
+  "Coding for Kids": [
+    { value: "scratch", label: "Scratch" },
+    { value: "app-inventor", label: "App Inventor" },
+    { value: "python", label: "Python" },
+    { value: "roblox", label: "Roblox Studio" },
+    { value: "minecraft", label: "Minecraft Education" },
+  ],
+  "Web Development": [
+    { value: "junior", label: "Junior" },
+    { value: "senior", label: "Senior" },
+    { value: "university", label: "University" },
+    { value: "professional", label: "Professional" },
+  ],
+};
 
 export const studentFormSchema = z.object({
   name: z
@@ -89,5 +109,4 @@ export const STUDENT_FORM_CONSTANTS = {
   classModeOptions: [...classModeOptions],
   studyProgramCards: [...studyProgramCards],
   studyProgramOptions: [...studyProgramOptions],
-  codingTrackOptions: [...codingTrackOptions],
 } as const;
