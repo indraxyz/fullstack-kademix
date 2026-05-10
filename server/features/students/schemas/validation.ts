@@ -1,44 +1,34 @@
 import { z } from "zod";
 
+import { STUDENT_FORM_CONSTANTS, PROGRAM_TRACKS } from "@/app/src/shared/validation/studentSchema";
+
 const nonEmptyString = z.string().min(1, "Value is required");
 
 const latestEducationEnum = z.enum(
-  [
-    "Primary",
-    "Junior",
-    "Senior",
-    "Vocational",
-    "Associate Degree",
-    "Bachelor Degree",
-    "Master",
-    "Doctoral",
-  ],
+  STUDENT_FORM_CONSTANTS.latestEducationOptions as unknown as [string, ...string[]],
   { message: "Invalid latest education" }
 );
-const genderEnum = z.enum(["Male", "Female", "Other"], {
-  message: "Invalid gender",
-});
-const classModeEnum = z.enum(["online", "offline"], {
-  message: "Class must be online or offline",
-});
+const genderEnum = z.enum(
+  STUDENT_FORM_CONSTANTS.genderOptions as unknown as [string, ...string[]],
+  { message: "Invalid gender" }
+);
+const classModeEnum = z.enum(
+  STUDENT_FORM_CONSTANTS.classModeOptions as unknown as [string, ...string[]],
+  { message: "Class must be online or offline" }
+);
 const studyProgramEnum = z.enum(
-  ["Office Administration", "Excel", "Coding"],
+  STUDENT_FORM_CONSTANTS.studyProgramCards as unknown as [string, ...string[]],
   { message: "Invalid study program" }
 );
 const studyProgramOptionEnum = z.enum(
-  [
-    "Office Administration",
-    "Excel",
-    "Coding – Fundamental",
-    "Coding – Frontend",
-    "Coding – Backend",
-    "Coding – Fullstack",
-  ],
-  { message: "Invalid study program" }
+  STUDENT_FORM_CONSTANTS.studyProgramOptions as unknown as [string, ...string[]],
+  { message: "Invalid study program option" }
 );
+
+const trackValues = Object.values(PROGRAM_TRACKS).flatMap(tracks => tracks.map(t => t.value));
 const codingTrackEnum = z.enum(
-  ["fundamental", "frontend", "backend", "fullstack"],
-  { message: "Invalid coding track" }
+  trackValues as unknown as [string, ...string[]],
+  { message: "Invalid track" }
 );
 
 export const studentInputSchema = z
